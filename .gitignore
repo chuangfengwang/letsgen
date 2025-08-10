@@ -40,3 +40,7 @@ Pods/
 .ipynb_checkpoints/
 __pycache__/
 logs/
+doc/dev-local/
+
+# private conf
+.env
