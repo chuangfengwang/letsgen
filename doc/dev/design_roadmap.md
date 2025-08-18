@@ -28,16 +28,29 @@ anthropic系列兼容接口
 对象存储/对象日志(可选): minio
 
 # 数据表设计
+### 基础信息 pg
 用户(n)-(n)计费账号(1)-(n)token
 账号(1)-(n)钱包, 每个币种一个钱包
 账号(n)-(n)模型, 关系表里加: 模态权限, 限流rpm/tpm/concurrent
 模型信息表(n)-(n)接入点
+
+### 日志与统计信息 timescaledb
 统计: 小时级每个模型请求数, token数总计, 最大并发
 日志: 请求/响应元信息-请求/响应体-对象替代路径
 
 token加密存储, 可搜索, 搜索时先加密再搜索
 
+各国法定货币代号 https://www.iban.hk/currency-codes
+
+
+# 监控
+活跃用户数: 做不到
+每个模型(流式): 活跃连接数, rpm, tpm, prompt token, completion token, prefix编码速度, 生成速度
+每个模型(非流式): 活跃连接数, rpm, tpm, prompt token, completion token, 耗时
+
+
 # 组件选择
+用户权限 jwt
 
 concurrent-log-handler: 解决多 worker 日志冲突问题
 uvloop + uvicorn: 替换默认 asyncio 事件循环
@@ -45,12 +58,24 @@ gunicorn: 解决多 worker 保活问题
 
 gunicorn 守护的多进程, 及N次请求后重启参数
 ```bash
-gunicorn app:app \
+gunicorn myapp:app \
 -k uvicorn.workers.UvicornWorker \
 -w 2 \
+--pid /tmp/gunicorn.pid \
 --preload \
+--graceful-timeout 30 \
 --max-requests 10000 \
 --max-requests-jitter 1000
+
+kill $(cat /tmp/gunicorn.pid)
+
+gunicorn -c gunicorn_config.py myapp:app
+
+
+sudo systemctl daemon-reload
+sudo systemctl enable gunicorn_letsgen.service
+sudo systemctl start gunicorn_letsgen.service
+sudo systemctl stop gunicorn_letsgen.service
 ```
 
 
