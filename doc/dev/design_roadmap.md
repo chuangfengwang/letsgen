@@ -7,7 +7,7 @@ UI路径
 /ui/index.html
 
 UI相关的接口
-/api/admin
+/api/ui
 
 api文档(自动生成)
 /docs

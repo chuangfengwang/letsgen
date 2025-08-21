@@ -140,7 +140,7 @@ create table letsgen_model
     id                 BIGSERIAL          not null,
     model_name         varchar(50) UNIQUE not null default '',           -- 模型名称,格式为 provider/model_name,如 azure/gpt-4o-24-08-06
     model_type         varchar(20)        not null default '',           -- 模型类型: generate, embedding, rerank
-    model_status       varchar(10)        not null default '',           -- 模型状态: ok, disabled, deprecated
+    model_status       varchar(10)        not null default '',           -- 模型状态: ok, waiting, disabled, deprecated
     provider           varchar(20)        not null default '',           -- 接入厂商
     support_tools      smallint           not null default 0,            -- 是否支持工具调用
     support_non_stream smallint           not null default 1,            -- 是否支持非流式响应
@@ -164,7 +164,7 @@ comment on table letsgen_model is '模型信息表';
 comment on column letsgen_model.id is '主键';
 comment on column letsgen_model.model_name is '模型名称,格式为 provider/model_name,如 azure/gpt-4o-24-08-06';
 comment on column letsgen_model.model_type is '模型类型: generate, embedding, rerank';
-comment on column letsgen_model.model_status is '模型状态: ok, disabled, deprecated';
+comment on column letsgen_model.model_status is '模型状态: ok, waiting, disabled, deprecated';
 comment on column letsgen_model.provider is '接入厂商';
 comment on column letsgen_model.support_tools is '是否支持工具调用,0:不支持,1:支持';
 comment on column letsgen_model.support_non_stream is '是否支持非流式响应,0:不支持,1:支持';
