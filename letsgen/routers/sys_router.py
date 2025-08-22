@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 # @File    : healthcheck_router.py
@@ -9,7 +8,6 @@
 import os
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import PlainTextResponse, RedirectResponse
-import letsgen.config as config
 
 router = APIRouter()
 
