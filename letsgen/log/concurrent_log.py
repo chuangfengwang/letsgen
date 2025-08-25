@@ -9,12 +9,13 @@ import atexit
 import logging
 import logging.handlers
 import queue
-
-from concurrent_log_handler import ConcurrentTimedRotatingFileHandler
 import os
 
+from concurrent_log_handler import ConcurrentTimedRotatingFileHandler
+import letsgen.config as config
+
 # 配置 basic log
-log_fmt = '%(asctime)s.%(msecs)03d - %(name)s %(filename)s:%(lineno)d [%(levelname)s] %(message)s'
+log_fmt = '%(asctime)s.%(msecs)03d - %(name)s:%(lineno)d [%(levelname)s] %(message)s'
 data_log_fmt = '%(asctime)s.%(msecs)03d %(levelname)s [%(name)s] %(message)s'
 date_fmt = "%Y-%m-%d %H:%M:%S"
 
@@ -105,18 +106,12 @@ def config_data_warehouse_logger_handler(logfile: str) -> logging.Handler:
     return queue_handler
 
 
-# Use an absolute path for the log file
-info_logfile = os.path.abspath("mylogfile-info.log")
-warn_logfile = os.path.abspath("mylogfile-warn.log")
-error_logfile = os.path.abspath("mylogfile-error.log")
-data_logfile = os.path.abspath("data-warehouse.log")
-
 # 一般业务运行日志
-info_queue_handler = config_common_logger_handler(info_logfile, logging.INFO)
-warn_queue_handler = config_common_logger_handler(warn_logfile, logging.WARN)
-error_queue_handler = config_common_logger_handler(error_logfile, logging.ERROR)
+info_queue_handler = config_common_logger_handler(config.info_logfile, logging.INFO)
+warn_queue_handler = config_common_logger_handler(config.warn_logfile, logging.WARN)
+error_queue_handler = config_common_logger_handler(config.error_logfile, logging.ERROR)
 # 收集到数仓的日志
-data_queue_handler = config_data_warehouse_logger_handler(data_logfile)
+data_queue_handler = config_data_warehouse_logger_handler(config.data_logfile)
 
 
 def add_common_handler_to_logger(logger: logging.Logger):

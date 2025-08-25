@@ -12,5 +12,5 @@ from datetime import datetime
 
 def gen_uuid():
     """生成紧凑格式的 UUID"""
-    uuid_output = str(uuid.uuid1()).replace("-", "")
+    uuid_output = str(uuid.uuid4()).replace("-", "")
     return uuid_output

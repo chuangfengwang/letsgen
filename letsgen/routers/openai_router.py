@@ -20,7 +20,6 @@ import letsgen.monitors.concurrency_controller as concurrency_controller
 
 router = APIRouter(prefix="/api/openai/v1", tags=["openai"])
 
-
 class RequestContext(BaseModel):
     # 身份信息
     identity: auth.Identity
@@ -40,7 +39,7 @@ async def chat_completions(
     """
     OpenAI Chat Completions API
     """
-    await asyncio.sleep(5.)
+    await asyncio.sleep(0.1)
     return {
         "identity": identity
     }

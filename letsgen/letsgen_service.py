@@ -17,10 +17,13 @@ import letsgen.routers.sys_router as sys_router
 import letsgen.routers.prometheus_router as prometheus_router
 import letsgen.routers.openai_router as openai_router
 import letsgen.routers.ui_router as ui_router
+import letsgen.middlewares.e2e_tracelog_middleware as e2e_tracelog_middleware
 
 # 确保当前目录在 sys.path 中
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 app = FastAPI()
+
+app.add_middleware(e2e_tracelog_middleware.RequestResponseLogger)
 app.include_router(sys_router.router)
 app.include_router(openai_router.router)
 app.include_router(ui_router.router)

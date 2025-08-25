@@ -15,9 +15,14 @@ timeout_keep_alive = 30
 
 # 服务工作目录
 work_dir = os.path.dirname(os.path.abspath(__file__))
-# 日志目录
+# 日志
 logs_dir = os.path.join(work_dir, "logs")
 os.makedirs(logs_dir, exist_ok=True)
+info_logfile = os.path.join(logs_dir, "info.log")
+warn_logfile = os.path.join(logs_dir, "warn.log")
+error_logfile = os.path.join(logs_dir, "error.log")
+data_logfile = os.path.join(logs_dir, "data-warehouse.log")
+
 # UI 静态文件目录
 ui_static_dir = os.path.join(work_dir, "../ui_static")
 # prometheus 多进程指标目录
