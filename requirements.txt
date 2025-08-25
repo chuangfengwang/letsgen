@@ -44,3 +44,5 @@ asyncpg==0.30.0
 redis==6.4.0
 # prometheus
 prometheus-client==0.22.1
+# logging
+concurrent-log-handler==0.9.28

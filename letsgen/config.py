@@ -18,6 +18,8 @@ work_dir = os.path.dirname(os.path.abspath(__file__))
 # 日志目录
 logs_dir = os.path.join(work_dir, "logs")
 os.makedirs(logs_dir, exist_ok=True)
+# UI 静态文件目录
+ui_static_dir = os.path.join(work_dir, "../ui_static")
 # prometheus 多进程指标目录
 prometheus_metrics_dir = os.environ.get("PROMETHEUS_MULTIPROC_DIR")
 if not prometheus_metrics_dir:
@@ -26,5 +28,3 @@ if not prometheus_metrics_dir:
 if os.path.exists(prometheus_metrics_dir):
     shutil.rmtree(prometheus_metrics_dir)
 os.makedirs(prometheus_metrics_dir, exist_ok=True)
-# UI 静态文件目录
-ui_static_dir = os.path.join(work_dir, "../ui_static")

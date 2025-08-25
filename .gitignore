@@ -37,10 +37,13 @@ Thumbs.db
 # pods ignore
 Pods/
 
+# runtime
 .ipynb_checkpoints/
 __pycache__/
 logs/
-doc/dev-local/
+*.lock
 
 # private conf
 .env
+# private doc
+doc/dev-local/
