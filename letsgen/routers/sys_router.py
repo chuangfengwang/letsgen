@@ -37,4 +37,4 @@ async def healthcheck():
     if os.path.exists('healthcheck.html'):
         return "ok"
     else:
-        raise HTTPException(status_code=404, detail="not ready")
+        raise HTTPException(status_code=404, detail="service is not ready")

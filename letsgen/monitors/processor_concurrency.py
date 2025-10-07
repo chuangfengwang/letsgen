@@ -1,24 +1,21 @@
 # -*- coding: utf-8 -*-
 """
 # @File    : concurrency_controller.py
-# @Desc    : 
+# @Desc    : 进程内并发控制
 # @Author  : chuangfeng.wang
 # @Time    : 2025-08-23 02:00
 """
+import asyncio
 import functools
 import logging
-import asyncio
 from typing import Dict, Callable
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 
-class ConcurrencyMonitor:
+class InProcessorConcurrencyMonitor:
     """
-    异步并发计数器上下文管理器。
+    进程内异步并发计数器上下文管理器。
     用于跟踪特定指标的当前正在处理的请求数量。
     """
 
@@ -60,16 +57,16 @@ class GlobalMonitorRegistry:
     全局监控器注册表，管理不同名称的 ConcurrencyMonitor 实例。
     """
     def __init__(self):
-        self._monitors: Dict[str, ConcurrencyMonitor] = {}
-        self._lock: asyncio.Lock = asyncio.Lock() # 用于保护 _monitors 字典的并发访问
+        self._monitors: Dict[str, InProcessorConcurrencyMonitor] = {}
+        self._lock: asyncio.Lock = asyncio.Lock()  # 用于保护 _monitors 字典的并发访问
 
-    async def get_monitor(self, metric_name: str) -> ConcurrencyMonitor:
+    async def get_monitor(self, metric_name: str) -> InProcessorConcurrencyMonitor:
         """
         根据 metric_name 获取或创建一个 ConcurrencyMonitor 实例。
         """
         async with self._lock:
             if metric_name not in self._monitors:
-                self._monitors[metric_name] = ConcurrencyMonitor(metric_name)
+                self._monitors[metric_name] = InProcessorConcurrencyMonitor(metric_name)
             return self._monitors[metric_name]
 
     async def get_all_concurrency_metrics(self) -> Dict[str, int]:
@@ -77,14 +74,12 @@ class GlobalMonitorRegistry:
         获取所有已注册监控器的当前并发数。
         """
         results = {}
-        async with self._lock: # 锁定注册表，确保在迭代时字典不被修改
+        async with self._lock:  # 锁定注册表，确保在迭代时字典不被修改
             for name, monitor in self._monitors.items():
                 # 注意：monitor.get_current_concurrency() 内部已经有自己的锁了
                 results[name] = await monitor.get_current_concurrency()
         return results
 
-# 创建一个全局的监控器注册表实例
-global_monitor_registry = GlobalMonitorRegistry()
 
 # 参数化的装饰器
 def monitor_concurrency(metric_name: str):
@@ -92,14 +87,22 @@ def monitor_concurrency(metric_name: str):
     一个异步装饰器工厂函数，用于监控特定API的并发数。
     metric_name: 用于区分不同接口的并发指标名。
     """
+
     def actual_decorator(func: Callable):
         # 被注解的函数名
         func_name = func.__name__
+
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
             # 获取或创建对应 metric_name 的 ConcurrencyMonitor 实例
             monitor = await global_monitor_registry.get_monitor(metric_name)
             async with monitor:
                 return await func(*args, **kwargs)
+
         return wrapper
+
     return actual_decorator
+
+
+# 创建一个全局的监控器注册表实例
+global_monitor_registry = GlobalMonitorRegistry()

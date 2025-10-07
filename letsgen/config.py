@@ -11,10 +11,11 @@ import shutil
 # API服务端口
 letsgen_web_port = 8000
 letsgen_workers = 1
-timeout_keep_alive = 30
+timeout_keep_alive = 5
 
 # 服务工作目录
 work_dir = os.path.dirname(os.path.abspath(__file__))
+
 # 日志
 logs_dir = os.path.join(work_dir, "logs")
 os.makedirs(logs_dir, exist_ok=True)
@@ -25,6 +26,7 @@ data_logfile = os.path.join(logs_dir, "data-warehouse.log")
 
 # UI 静态文件目录
 ui_static_dir = os.path.join(work_dir, "../ui_static")
+
 # prometheus 多进程指标目录
 prometheus_metrics_dir = os.environ.get("PROMETHEUS_MULTIPROC_DIR")
 if not prometheus_metrics_dir:
@@ -33,3 +35,11 @@ if not prometheus_metrics_dir:
 if os.path.exists(prometheus_metrics_dir):
     shutil.rmtree(prometheus_metrics_dir)
 os.makedirs(prometheus_metrics_dir, exist_ok=True)
+
+# redis
+redis_conn_type = "single"
+redis_single_url = os.environ.get("REDIS_SINGLE_URL", "redis://:fagohS0aaP7ce6za@127.0.0.1:6379/0")
+
+# llm
+# 大模型 api 最大等待时间,单位毫秒
+llm_api_max_timeout = 10000

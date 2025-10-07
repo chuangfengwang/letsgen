@@ -42,7 +42,11 @@ websockets==15.0.1
 asyncpg==0.30.0
 # redis
 redis==6.4.0
+hiredis==3.2.1
 # prometheus
 prometheus-client==0.22.1
 # logging
 concurrent-log-handler==0.9.28
+# encoder decoder
+#base58==2.1.1
+#pybase62==1.0.0

@@ -5,44 +5,51 @@
 # @Author  : chuangfeng.wang
 # @Time    : 2025-08-25 21:48
 """
-import traceback
-import uuid
-import time
 import json
 import logging
+import time
+from typing import Dict
 
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
-from starlette.responses import Response, StreamingResponse
+from starlette.responses import Response
 
-import letsgen.log.concurrent_log as concurrent_log
+import letsgen.utils.util as util
 
 logger = logging.getLogger(__name__)
-logger.propagate = False
-# concurrent_log.add_data_warehouse_handler_to_logger(logger)
-concurrent_log.add_common_handler_to_logger(logger)
 
 
 class RequestResponseLogger(BaseHTTPMiddleware):
+
+    def filter_log_headers(self, request: Request) -> Dict[str, str]:
+        """哪些 header 需要记录到日志里"""
+        log_headers = {}
+        for key, value in request.headers.items():
+            if key.upper().startswith('X-'):
+                log_headers[key] = value
+        return log_headers
+
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         start_time = time.time()
         qtrace_id = request.headers.get("qtraceid")
         if not qtrace_id:
-            qtrace_id = str(uuid.uuid4()).replace("-", "")
+            qtrace_id = util.gen_uuid()
         request.state.qtrace_id = qtrace_id  # 将request_id存入state，方便后续在路由中使用或关联
 
         log_data = {
             "qtraceid": qtrace_id,
             "type": "http_request",
             "method": request.method,
-            "url": str(request.url),
+            "path": str(request.url.path),
             "client_ip": request.client.host if request.client else "N/A",
-            "headers": dict(request.headers),
+            "query_param": dict(request.query_params),
+            "headers": self.filter_log_headers(request),
+            "body": None,
         }
 
         # 尝试读取请求体
         try:
-            # 读取请求体，FastAPI的Request对象会缓存body，所以后续路由中仍可访问
+            # 读取请求体，FastAPI 的 Request 对象会缓存 body，所以后续路由中仍可访问. todo: really?
             try:
                 # 尝试解码为JSON
                 log_data["body"] = await request.json()

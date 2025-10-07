@@ -13,9 +13,7 @@ router = APIRouter(tags=["prometheus"])
 
 
 def make_metrics_app():
+    """创建多进程兼容实例"""
     registry = CollectorRegistry()
     multiprocess.MultiProcessCollector(registry)
     return make_asgi_app(registry=registry)
-
-
-prometheus_metrics_app = make_metrics_app()

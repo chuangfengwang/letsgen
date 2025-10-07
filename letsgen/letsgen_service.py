@@ -9,27 +9,70 @@
 import os
 import sys
 
+# 确保当前文件所在目录在 sys.path 中
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from contextlib import asynccontextmanager
+import logging.config
+
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 import letsgen.config as config
-import letsgen.routers.sys_router as sys_router
-import letsgen.routers.prometheus_router as prometheus_router
-import letsgen.routers.openai_router as openai_router
-import letsgen.routers.ui_router as ui_router
+import letsgen.log.concurrent_log as concurrent_log
+import letsgen.middlewares.distributed_concurrency as distributed_concurrency
 import letsgen.middlewares.e2e_tracelog_middleware as e2e_tracelog_middleware
+import letsgen.routers.api_sys_router as api_sys_router
+import letsgen.routers.openai_router as openai_router
+import letsgen.routers.prometheus_router as prometheus_router
+import letsgen.routers.sys_router as sys_router
+import letsgen.routers.ui_router as ui_router
 
-# 确保当前目录在 sys.path 中
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-app = FastAPI()
+logging.config.dictConfig(concurrent_log.UVICORN_LOGGING_CONFIG)
+
+logger = logging.getLogger(__name__)
+dw_logger = logging.getLogger("data-warehouse")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """应用生命周期管理"""
+    logger.info("Letsgen service start...")
+    dw_logger.info("data warehouse log info...")
+
+    # 向 redis 发送心跳信号任务启动
+    await distributed_concurrency.ConcurrencyLimitMiddleware.cls_async_init()
+
+    yield
+
+    # 向 redis 发送心跳信号任务停止
+    await distributed_concurrency.ConcurrencyLimitMiddleware.cls_async_close()
+
+    logger.info("Letsgen service end...")
+
+
+app = FastAPI(
+    title="Letsgen gateway",
+    description="LLM API Gateway",
+    version="0.1.0",
+    lifespan=lifespan
+)
 
 app.add_middleware(e2e_tracelog_middleware.RequestResponseLogger)
+app.add_middleware(distributed_concurrency.ConcurrencyLimitMiddleware)
+# 系统级路径
 app.include_router(sys_router.router)
+# api 相关的系统状态接口
+app.include_router(api_sys_router.router)
+# openai 兼容接口
 app.include_router(openai_router.router)
+# UI 用到的接口
 app.include_router(ui_router.router)
 
+# 前端/静态资源
 app.mount("/ui", StaticFiles(directory=config.ui_static_dir), name="ui_static")
-app.mount("/metrics", prometheus_router.prometheus_metrics_app, name="prometheus_metrics")
+# prometheus 监控端点
+app.mount("/metrics", prometheus_router.make_metrics_app(), name="prometheus_metrics")
 
 if __name__ == '__main__':
     import uvicorn
@@ -43,4 +86,6 @@ if __name__ == '__main__':
         workers=config.letsgen_workers,
         timeout_keep_alive=config.timeout_keep_alive,
         limit_max_requests=None,  # 不限制请求数
+        # access_log=False,  # 使用自定义日志
+        log_config=concurrent_log.UVICORN_LOGGING_CONFIG,  # 禁用默认日志配置
     )

@@ -86,14 +86,14 @@ comment on column letsgen_user_account_rlt.update_at is '更新时间';
 -- 鉴权 token 表 letsgen_account_apikey
 create table letsgen_account_apikey
 (
-    id           BIGSERIAL    not null,
-    account_name varchar(50)  not null,
+    id            BIGSERIAL    not null,
+    account_name  varchar(50)  not null,
     apikey_name   varchar(50)  not null default '',
-    apikey_value        varchar(100) not null default '',
+    apikey_value  varchar(100) not null default '',
     apikey_status varchar(10)  not null default '',
-    note         text         not null default '',
-    create_at    TIMESTAMPTZ  not null default now(),
-    update_at    TIMESTAMPTZ  not null default now(),
+    note          text         not null default '',
+    create_at     TIMESTAMPTZ  not null default now(),
+    update_at     TIMESTAMPTZ  not null default now(),
     PRIMARY KEY (id),
     CONSTRAINT uq_letsgen_account_token UNIQUE (account_name, apikey_name)
 );
@@ -283,10 +283,31 @@ comment on column letsgen_account_model_rlt.create_at is '创建时间';
 comment on column letsgen_account_model_rlt.update_at is '更新时间';
 
 -- 接入点表 letsgen_provider_endpoint
--- 模型接入点表 letsgen_model_endpoint
+create table letsgen_provider_endpoint
+(
+    id                 BIGSERIAL     not null,
+    provider_name      varchar(50)   not null default '', -- 接入厂商名
+    endpoint_name      varchar(50)   not null default '', -- endpoint 名称
+    credential_name1   varchar(50)   not null default '', -- 接入点使用的凭证名称1
+    credential_name2   varchar(50)   not null default '', -- 接入点使用的凭证名称2
+    endpoint_status    varchar(10)   not null default '', -- endpoint 状态: ok, down
+    endpoint_baseurl   varchar(1024) not null default '', -- endpoint 基础路径
+    endpoint_region    varchar(50)   not null default '', -- endpoint 区域代号
+    endpoint_proxies   text          not null default '', -- endpoint 使用的代理(多个)
+    api_format         varchar(50)   not null default '', -- 接口格式
+    endpoint_path_info text          not null default '', -- endpoint path信息. 支持哪些路径,健康检查方式等
+    endpoint_quota     text          not null default '', -- endpoint 容量. rpm/tpm/concurrency
+    note               text          not null default '',
+    create_at          TIMESTAMPTZ   not null default now(),
+    update_at          TIMESTAMPTZ   not null default now(),
+    PRIMARY KEY (id),
+    CONSTRAINT uq_letsgen_provider_endpoint UNIQUE (provider_name, endpoint_name)
+);
 
+-- 模型-接入点表 letsgen_model_endpoint
+create table
 
--- 用户(n)-(n)计费账号(1)-(n)token
+-- 用户(n)-(n)计费账号(1)-(n)ApiKey
 -- 账号(1)-(n)钱包, 每个币种一个钱包
 -- 账号(n)-(n)模型, 关系表里加: 模态权限, 限流rpm/tpm/concurrent
 -- 模型信息表(n)-(n)接入点(n)-(n)接入凭证
