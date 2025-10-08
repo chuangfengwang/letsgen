@@ -187,7 +187,7 @@ def add_console_handler_to_logger(logger: logging.Logger):
 # UVICORN 自定义日志配置
 UVICORN_LOGGING_CONFIG = {
     "version": 1,
-    "disable_existing_loggers": True,  # <--- 关键设置
+    "disable_existing_loggers": False,  # <--- 关键设置
     "formatters": {
         "biz_log_fmt": {
             "format": biz_log_fmt,

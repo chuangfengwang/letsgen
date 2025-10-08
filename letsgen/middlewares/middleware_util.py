@@ -28,7 +28,8 @@ async def set_body(request: Request, body: bytes):
 async def reconsume_json_body(request: Request):
     # 1. 检查方法：通常只有 POST/PUT/PATCH 等方法才有请求主体
     if request.method not in ["POST", "PUT", "PATCH"]:
-        yield request.body()
+        yield await request.body()
+        return
 
     body = None
     try:
@@ -37,7 +38,6 @@ async def reconsume_json_body(request: Request):
     except Exception as e:
         print(f"无法读取请求主体: {e}")
         # 即使读取失败，也应该继续处理请求
-
     try:
         yield body  # 资源在 'yield' 处返回，代码块执行
     finally:

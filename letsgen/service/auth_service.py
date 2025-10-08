@@ -34,4 +34,3 @@ async def get_account(request: Request) -> str:
         account = request.query_params.get("account", "")
         if not account:
             raise error_class.AuthorizationError(f"debug account error!")
-        raise e

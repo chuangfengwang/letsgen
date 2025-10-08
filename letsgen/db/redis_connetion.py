@@ -30,19 +30,6 @@ def sync_single_conn(redis_url: str):
     )
     return redis_conn
 
-    # ip = "127.0.0.1"
-    # port = 6379
-    # password = "fagohS0aaP7ce6za"
-    # redis_conn = StrictRedis(
-    #     host=ip,
-    #     port=port,
-    #     password=password,
-    #     db=0,
-    #     encoding="utf8",
-    #     decode_responses=True,
-    # )
-    # return redis_conn
-
 
 def async_sentinel_conn():
     from redis.asyncio.sentinel import Sentinel

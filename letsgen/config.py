@@ -7,6 +7,15 @@
 """
 import os
 import shutil
+import sys
+
+from dotenv import load_dotenv
+
+# 确保当前文件所在目录在 sys.path 中
+# sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+# 加载环境变量
+load_dotenv()
 
 # API服务端口
 letsgen_web_port = 8000
@@ -38,8 +47,14 @@ os.makedirs(prometheus_metrics_dir, exist_ok=True)
 
 # redis
 redis_conn_type = "single"
-redis_single_url = os.environ.get("REDIS_SINGLE_URL", "redis://:fagohS0aaP7ce6za@127.0.0.1:6379/0")
+redis_single_url = os.environ.get("REDIS_SINGLE_URL")
 
 # llm
 # 大模型 api 最大等待时间,单位毫秒
-llm_api_max_timeout = 10000
+llm_api_max_timeout = 600000
+
+# 需要监控 并发/tpm 的路径
+letsgen_llm_api = {
+    "/api/openai/v1/chat/completion",
+    "/api/openai/v1/completions",
+}

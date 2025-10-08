@@ -34,7 +34,7 @@ class RequestResponseLogger(BaseHTTPMiddleware):
         qtrace_id = request.headers.get("qtraceid")
         if not qtrace_id:
             qtrace_id = util.gen_uuid()
-        request.state.qtrace_id = qtrace_id  # 将request_id存入state，方便后续在路由中使用或关联
+        request.state.qtrace_id = qtrace_id  # 将 trace_id 存入state，方便后续在路由中使用或关联
 
         log_data = {
             "qtraceid": qtrace_id,

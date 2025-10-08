@@ -6,17 +6,17 @@
 # @Author  : chuangfeng.wang
 # @Time    : 2025-08-21 20:30
 """
-import os
-import sys
-
-# 确保当前文件所在目录在 sys.path 中
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-from contextlib import asynccontextmanager
+import json
 import logging.config
+import os
+from contextlib import asynccontextmanager
+from json import JSONDecodeError
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from starlette import status
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 import letsgen.config as config
 import letsgen.log.concurrent_log as concurrent_log
@@ -73,6 +73,28 @@ app.include_router(ui_router.router)
 app.mount("/ui", StaticFiles(directory=config.ui_static_dir), name="ui_static")
 # prometheus 监控端点
 app.mount("/metrics", prometheus_router.make_metrics_app(), name="prometheus_metrics")
+
+
+# 捕获所有未处理的异常
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    # 安全获取请求体数据
+    body_bytes = None
+    try:
+        if request.method in ("POST", "PUT", "PATCH"):
+            body_bytes = await request.body()
+            json.loads(body_bytes)  # 尝试解析验证
+    except (JSONDecodeError, UnicodeDecodeError):
+        body_bytes = b"<invalid JSON>"
+    except Exception:
+        body_bytes = b"<unreadable body>"
+    logger.error(f"Letsgen error. path: {request.url.path}, method: {request.method}, body_bytes: {body_bytes}",
+                 exc_info=True)
+    message = f'Letsgen service error'
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={"error": {"message": message}})
+
 
 if __name__ == '__main__':
     import uvicorn
