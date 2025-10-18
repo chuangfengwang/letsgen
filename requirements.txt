@@ -47,6 +47,7 @@ hiredis==3.2.1
 prometheus-client==0.22.1
 # logging
 concurrent-log-handler==0.9.28
-# encoder decoder
-#base58==2.1.1
-#pybase62==1.0.0
+# cache
+cachetools==6.2.1
+# openai
+openai==2.5.0

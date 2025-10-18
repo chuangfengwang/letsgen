@@ -32,3 +32,27 @@ class ParamError(LetsgenError):
     def __init__(self, message: str) -> None:
         self.message = message
         super().__init__(self.message)
+
+
+class ConfigError(LetsgenError):
+    """配置异常"""
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(self.message)
+
+
+class SystemConfigError(ConfigError):
+    """系统配置异常"""
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(self.message)
+
+
+class AdminConfigError(ConfigError):
+    """管理员后台配置异常"""
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(self.message)

@@ -58,8 +58,10 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-app.add_middleware(e2e_tracelog_middleware.RequestResponseLogger)
+# 中间件: 最后添加的最先执行
 app.add_middleware(distributed_concurrency.ConcurrencyLimitMiddleware)
+app.add_middleware(e2e_tracelog_middleware.RequestResponseLogger)
+
 # 系统级路径
 app.include_router(sys_router.router)
 # api 相关的系统状态接口

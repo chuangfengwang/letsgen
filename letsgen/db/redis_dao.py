@@ -17,6 +17,7 @@ async_redis_conn = None
 
 
 def get_sync_redis_conn() -> SyncStrictRedis:
+    """获取同步 redis 连接"""
     global sync_redis_conn
     if sync_redis_conn is not None:
         return sync_redis_conn
@@ -26,6 +27,7 @@ def get_sync_redis_conn() -> SyncStrictRedis:
 
 
 def get_async_redis_conn() -> AsyncStrictRedis:
+    """获取异步 redis 连接"""
     global async_redis_conn
     if async_redis_conn is not None:
         return async_redis_conn
