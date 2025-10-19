@@ -7,12 +7,13 @@
 """
 from __future__ import annotations
 
-from typing import Tuple, Any, Dict, Union, Set, List
+from typing import Tuple, Any, Dict, Union, Set, List, Generator, AsyncGenerator
 
 import httpx
 from openai import AsyncOpenAI, AsyncStream
 from openai.types.chat import ChatCompletionChunk, ChatCompletion
 
+from letsgen.entity.llm_entity import LlmRequestContext
 from letsgen.exceptions import error_class
 from letsgen.service.llm_api_transfer import LlmTransferService
 from letsgen.utils.function_util import all_param_expect_kwargs
@@ -110,6 +111,9 @@ class OpenAIService(LlmTransferService):
             param["extra_headers"] = headers
         if queries:
             param["extra_query"] = queries
+        if body.get("stream", False):
+            # 强制添加 usage 参数
+            extra_body["stream_options"] = {"include_usage": True}
         return param
 
     async def call_endpoint(
@@ -148,3 +152,14 @@ class OpenAIService(LlmTransferService):
             raise error_class.ParamError("Missing model param")
         is_stream = body.get("stream", False)
         return model_id, is_stream
+
+    async def stream_generator(
+        self,
+        stream_response: AsyncStream[ChatCompletionChunk],
+        context: LlmRequestContext
+    ) -> AsyncGenerator[str, None]:
+        """流式响应生成器"""
+        async for chunk in stream_response:
+            context.end_chunk = chunk
+            yield f"data: {chunk.model_dump_json()}\n\n"
+        yield "data: [DONE]\n\n"

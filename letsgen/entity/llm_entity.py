@@ -25,7 +25,7 @@ class LlmRequestContext(BaseModel):
     # 各阶段的时间戳
     stage_ts: List[Tuple[str, datetime]] = []
     # error 信息
-    error: Any=None
+    error: Any = None
 
     # 请求路径
     request_path: str | None = None
@@ -52,6 +52,8 @@ class LlmRequestContext(BaseModel):
     provider_response: Any | None = None
     # 最终返回给用户的结果
     end_response: Any | None = None
+    # 对于流式, 保存最后一个 chunk
+    end_chunk: Any | None = None
 
     # 本次次调用 token 用量
     usage: Dict[str, Any] | None = None

@@ -7,7 +7,7 @@
 """
 from __future__ import annotations
 
-from typing import Tuple, Any
+from typing import Tuple, Any, Generator, AsyncGenerator, AsyncIterator, AsyncIterable
 
 from letsgen.entity.llm_entity import LlmRequestContext
 from letsgen.exceptions import error_class
@@ -53,6 +53,10 @@ class LlmTransferService:
 
     def parse_model_and_stream(self, body: dict) -> Tuple[str, bool]:
         """解析 body 中的 model 和 stream 参数"""
+        raise NotImplementedError()
+
+    async def stream_generator(self, stream_response, context: LlmRequestContext) -> AsyncIterable[str]:
+        """流式响应生成器"""
         raise NotImplementedError()
 
     async def run(self, context: LlmRequestContext):

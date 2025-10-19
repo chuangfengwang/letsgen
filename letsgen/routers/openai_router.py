@@ -8,13 +8,15 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, cast
 
-from fastapi import APIRouter, Request, Depends, BackgroundTasks
+from fastapi import APIRouter, Request, Response, Depends, BackgroundTasks
+from fastapi.responses import StreamingResponse
 
 import asyncio
 
 import letsgen.dependencies.auth as auth
+from letsgen.entity.llm_entity import LlmRequestContext
 from letsgen.service.openai_service import OpenAIService
 from letsgen.service.llm_api_transfer import LlmTransferService
 
@@ -25,14 +27,29 @@ llmTransferService: LlmTransferService = OpenAIService()
 @router.post("/chat/completions")
 async def chat_completions(
     request: Request,
+    response: Response,
     background_tasks: BackgroundTasks,
     identity: auth.Identity = Depends(auth.header_authorize_check),
 ):
     """
     OpenAI Chat Completions API
     """
-    response = await llmTransferService.run(request.state.context)
-    return response
+    context = cast(LlmRequestContext, request.state.context)
+    provider_resp = await llmTransferService.run(context)
+
+    if context.is_stream:
+        return StreamingResponse(
+            llmTransferService.stream_generator(provider_resp, request.state.context),
+            media_type="text/event-stream",
+            headers={
+                "qtraceid": context.trace_id,
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+            }
+        )
+    else:
+        response.headers["qtraceid"] = context.trace_id
+        return provider_resp
 
 
 @router.get("/chat/completion")
