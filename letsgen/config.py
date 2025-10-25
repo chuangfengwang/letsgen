@@ -17,6 +17,9 @@ from dotenv import load_dotenv
 # 加载环境变量
 load_dotenv()
 
+# 调试标记
+debug_flag = os.environ.get("LETSGEN_DEBUG_FLAG", "false").lower() == "true"
+
 # API服务端口
 letsgen_web_port = 8000
 letsgen_workers = 1
@@ -49,12 +52,19 @@ os.makedirs(prometheus_metrics_dir, exist_ok=True)
 redis_conn_type = "single"
 redis_single_url = os.environ.get("REDIS_SINGLE_URL")
 
+# 基本数据数据库配置
+letsgen_db_pg_url = os.environ.get("LETSGEN_DB_PG_URL")
+# 日志数据库配置
+letsgen_log_pg_url = os.environ.get("LETSGEN_LOG_PG_URL")
+
 # llm
 # 大模型 api 最大等待时间,单位毫秒
 llm_api_max_timeout = 600000
 
-# 需要监控 并发/tpm 的路径
+# 需要监控 并发/tpm/qpm 的路径
 letsgen_llm_api = {
     "/api/openai/v1/chat/completion",
-    "/api/openai/v1/completions",
 }
+
+# 加解密秘钥. 必须是 16/24/32 位字节长度的字符串
+letsgen_encryption_key = os.environ.get("LETSGEN_ENCRYPTION_KEY", "letsGenGatewayAI")

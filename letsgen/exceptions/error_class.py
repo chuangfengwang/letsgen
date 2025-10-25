@@ -56,3 +56,11 @@ class AdminConfigError(ConfigError):
     def __init__(self, message: str) -> None:
         self.message = message
         super().__init__(self.message)
+
+
+class OpsUiConfigError(LetsgenError):
+    """UI 操作异常. 消息用于前端提示"""
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(self.message)

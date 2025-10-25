@@ -19,7 +19,7 @@ import letsgen.config as config
 import letsgen.db.redis_dao as redis_dao
 import letsgen.middlewares.middleware_util as middleware_util
 import letsgen.service.auth_service as auth_service
-import letsgen.utils.util as util
+import letsgen.utils.codec_util as codec_util
 from letsgen.exceptions import error_class
 
 logger = logging.getLogger(__name__)
@@ -116,7 +116,7 @@ class DistributeCurrencyCounter:
         logger.info(f"cleanup_zombie_request finished. key: {key}")
 
     async def enter_request(self, key: str, request_ttl: float) -> str:
-        letsgen_req_id = util.gen_uuid_base64()
+        letsgen_req_id = codec_util.gen_uuid_base64()
         logger.info(f"enter_request start. key: {key}, letsgen_req_id: {letsgen_req_id}")
 
         member = self._request_zset_member(letsgen_req_id)
@@ -183,7 +183,7 @@ class DistributeCurrencyContext:
 # 进程级全局计数器
 llm_api_account_counter = DistributeCurrencyCounter(
     redis_conn=redis_dao.get_async_redis_conn(),
-    instance_id=util.gen_uuid_base64(),
+    instance_id=codec_util.gen_uuid_base64(),
     instance_ttl=config.llm_api_max_timeout
 )
 

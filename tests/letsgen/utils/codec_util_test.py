@@ -6,7 +6,7 @@
 # @Time    : 2025-10-04 13:28
 """
 
-from letsgen.utils.util import *
+from letsgen.utils.codec_util import *
 
 
 def test_padding_to_base64():

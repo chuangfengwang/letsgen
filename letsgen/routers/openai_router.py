@@ -7,18 +7,16 @@
 """
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Annotated, cast
+import asyncio
+from typing import cast
 
 from fastapi import APIRouter, Request, Response, Depends, BackgroundTasks
 from fastapi.responses import StreamingResponse
 
-import asyncio
-
 import letsgen.dependencies.auth as auth
 from letsgen.entity.llm_entity import LlmRequestContext
-from letsgen.service.openai_service import OpenAIService
 from letsgen.service.llm_api_transfer import LlmTransferService
+from letsgen.service.openai_service import OpenAIService
 
 router = APIRouter(prefix="/api/openai/v1", tags=["openai"])
 llmTransferService: LlmTransferService = OpenAIService()

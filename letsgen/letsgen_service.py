@@ -27,6 +27,7 @@ import letsgen.routers.openai_router as openai_router
 import letsgen.routers.prometheus_router as prometheus_router
 import letsgen.routers.sys_router as sys_router
 import letsgen.routers.ui_router as ui_router
+import letsgen.db.pg_connection as db_pg_connection
 
 logging.config.dictConfig(concurrent_log.UVICORN_LOGGING_CONFIG)
 
@@ -47,6 +48,7 @@ async def lifespan(app: FastAPI):
 
     # 向 redis 发送心跳信号任务停止
     await distributed_concurrency.ConcurrencyLimitMiddleware.cls_async_close()
+    await db_pg_connection.close_pg_pool()
 
     logger.info("Letsgen service end...")
 

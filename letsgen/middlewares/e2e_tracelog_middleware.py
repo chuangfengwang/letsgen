@@ -16,8 +16,8 @@ from starlette.responses import Response
 
 import letsgen.config as config
 import letsgen.entity.llm_entity as openai_entity
-import letsgen.utils.util as util
-import letsgen.utils.util as utils
+import letsgen.utils.datatime_util as datatime_util
+import letsgen.utils.codec_util as codec_util
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ class RequestResponseLogger(BaseHTTPMiddleware):
         request_in_dt = context.mark_event_dt("request_in")
         qtrace_id = request.headers.get("qtraceid")
         if not qtrace_id:
-            qtrace_id = util.gen_uuid()
+            qtrace_id = codec_util.gen_uuid()
         context.trace_id = qtrace_id  # 将 trace_id 存入 state
         context.request_path = request.url.path
         context.request_method = request.method
@@ -54,7 +54,7 @@ class RequestResponseLogger(BaseHTTPMiddleware):
         log_data = {
             "qtraceid": qtrace_id,
             "type": "http_request",
-            "request_in_dt": util.datetime_to_str(request_in_dt),
+            "request_in_dt": datatime_util.datetime_to_str(request_in_dt),
             "proj_id": context.proj_id,
             "method": request.method,
             "path": request.url.path,
@@ -128,13 +128,13 @@ class RequestResponseLogger(BaseHTTPMiddleware):
                 response.body_iterator = logging_body_iterator()
 
             # 记录响应的元数据 (不包含完整的响应体，因为体是流式处理的)
-            process_time = utils.timedelta_to_milliseconds((datetime.now() - request_in_dt))
+            process_time = datatime_util.timedelta_to_milliseconds((datetime.now() - request_in_dt))
             response_out_dt = context.mark_event_dt("response_out")
             response_metadata_log_data = {
                 "qtraceid": qtrace_id,
                 "type": "http_response_metadata",
-                "request_in_dt": util.datetime_to_str(request_in_dt),
-                "response_out_dt": util.datetime_to_str(response_out_dt),
+                "request_in_dt": datatime_util.datetime_to_str(request_in_dt),
+                "response_out_dt": datatime_util.datetime_to_str(response_out_dt),
                 "process_time": process_time,
                 "proj_id": context.proj_id,
                 "status_code": response.status_code,
@@ -147,7 +147,7 @@ class RequestResponseLogger(BaseHTTPMiddleware):
             return response  # 返回被修改的响应对象
 
         except Exception as e:
-            process_time = utils.timedelta_to_milliseconds((datetime.now() - request_in_dt))
+            process_time = datatime_util.timedelta_to_milliseconds((datetime.now() - request_in_dt))
             error_log_data = {
                 "qtraceid": qtrace_id,
                 "type": "http_error",

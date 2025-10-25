@@ -7,7 +7,7 @@
 # @Time    : 2025-08-16 00:03
 """
 import uuid
-from datetime import datetime, timedelta
+
 import base64
 
 
@@ -25,25 +25,9 @@ def gen_uuid_base64() -> str:
 
 def _padding_to_base64(string: str) -> str:
     """用 = 补齐 base64 字符串长度到 4 的倍数长度"""
-    return string + "=" * (len(string) % 4)
+    return string + "=" * (len(string) - len(string) % 4)
 
 
 def b64decode(string: str) -> bytes:
     """带 padding 补齐能力的 base64 解码器"""
     return base64.b64decode(_padding_to_base64(string).encode('utf-8'))
-
-
-def current_time_str() -> str:
-    """获取当前时间的字符串表示"""
-    dt = datetime.now()
-    return dt.strftime("%Y-%m-%dT%H:%M:%S.%f")
-
-
-def datetime_to_str(dt: datetime) -> str:
-    """将 datetime 转换为字符串"""
-    return dt.strftime("%Y-%m-%dT%H:%M:%S.%f")
-
-
-def timedelta_to_milliseconds(td: timedelta) -> int:
-    """将 timedelta 转换为毫秒数"""
-    return int(td.total_seconds() * 1000)
