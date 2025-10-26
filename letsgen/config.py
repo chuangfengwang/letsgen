@@ -67,4 +67,14 @@ letsgen_llm_api = {
 }
 
 # 加解密秘钥. 必须是 16/24/32 位字节长度的字符串
-letsgen_encryption_key = os.environ.get("LETSGEN_ENCRYPTION_KEY", "letsGenGatewayAI")
+letsgen_encryption_key = os.environ.get("LETSGEN_ENCRYPTION_KEY")
+if len(letsgen_encryption_key) > 32:
+    letsgen_encryption_key = letsgen_encryption_key[:32]
+elif len(letsgen_encryption_key) > 24:
+    letsgen_encryption_key = letsgen_encryption_key[:24]
+elif len(letsgen_encryption_key) > 16:
+    letsgen_encryption_key = letsgen_encryption_key[:16]
+elif len(letsgen_encryption_key) < 16:
+    raise ValueError("LETSGEN_ENCRYPTION_KEY length must be 16, 24, or 32 bytes")
+# JWT 秘钥
+letsgen_jwt_secret_key = os.environ.get("LETSGEN_JWT_SECRET_KEY")
