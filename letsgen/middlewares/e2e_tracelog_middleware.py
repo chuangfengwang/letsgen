@@ -41,10 +41,8 @@ class RequestResponseLogger(BaseHTTPMiddleware):
 
         # 构造 context 各个参数
         request_in_dt = context.mark_event_dt("request_in")
-        qtrace_id = request.headers.get("qtraceid")
-        if not qtrace_id:
-            qtrace_id = codec_util.gen_uuid()
-        context.trace_id = qtrace_id  # 将 trace_id 存入 state
+        context.letsgen_req_id = codec_util.gen_uuid()
+        context.trace_id = request.headers.get("qtraceid", default=context.letsgen_req_id)
         context.request_path = request.url.path
         context.request_method = request.method
         client_ip = request.client.host if request.client else "N/A"
@@ -52,7 +50,8 @@ class RequestResponseLogger(BaseHTTPMiddleware):
         context.proj_id = request.headers.get("project", "")
 
         log_data = {
-            "qtraceid": qtrace_id,
+            "letsgen_req_id": context.letsgen_req_id,
+            "qtraceid": context.trace_id,
             "type": "http_request",
             "request_in_dt": datatime_util.datetime_to_str(request_in_dt),
             "proj_id": context.proj_id,
@@ -80,7 +79,7 @@ class RequestResponseLogger(BaseHTTPMiddleware):
                 else:
                     log_data["body"] = None
         except Exception as e:
-            logger.warning(f"Failed to read request body for {qtrace_id}: {e}", exc_info=True)
+            logger.warning(f"Failed to read request body for {context.trace_id}: {e}", exc_info=True)
             log_data["body"] = "<ERROR: Could not read body>"
 
         context.origin_body_param = body_param
@@ -109,7 +108,8 @@ class RequestResponseLogger(BaseHTTPMiddleware):
                     except Exception:
                         chunk_content_preview = f"<binary chunk of {len(chunk)} bytes>"
                     chunk_info = {
-                        "qtraceid": qtrace_id,
+                        "letsgen_req_id": context.letsgen_req_id,
+                        "qtraceid": context.trace_id,
                         "proj_id": context.proj_id,
                         "chunk_number": chunk_num,
                         "chunk_size_bytes": len(chunk),
@@ -131,7 +131,7 @@ class RequestResponseLogger(BaseHTTPMiddleware):
             process_time = datatime_util.timedelta_to_milliseconds((datetime.now() - request_in_dt))
             response_out_dt = context.mark_event_dt("response_out")
             response_metadata_log_data = {
-                "qtraceid": qtrace_id,
+                "qtraceid": context.trace_id,
                 "type": "http_response_metadata",
                 "request_in_dt": datatime_util.datetime_to_str(request_in_dt),
                 "response_out_dt": datatime_util.datetime_to_str(response_out_dt),
@@ -149,7 +149,7 @@ class RequestResponseLogger(BaseHTTPMiddleware):
         except Exception as e:
             process_time = datatime_util.timedelta_to_milliseconds((datetime.now() - request_in_dt))
             error_log_data = {
-                "qtraceid": qtrace_id,
+                "qtraceid": context.trace_id,
                 "type": "http_error",
                 "proj_id": context.proj_id,
                 "error_message": str(e),

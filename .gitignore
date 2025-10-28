@@ -45,5 +45,7 @@ logs/
 
 # private conf
 .env
+vertex-cert.json
+volc_model_mapping.json
 # private doc
 doc/dev-local/

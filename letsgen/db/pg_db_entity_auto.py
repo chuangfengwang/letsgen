@@ -94,33 +94,6 @@ class LetsgenModel(SQLModel, table=True):
     update_at: datetime.datetime = Field(sa_column=Column('update_at', DateTime(True), nullable=False, server_default=text('now()'), comment='更新时间'))
 
 
-class LetsgenModelCallStat(SQLModel, table=True):
-    __tablename__ = 'letsgen_model_call_stat'
-    __table_args__ = (
-        PrimaryKeyConstraint('id', name='letsgen_model_call_stat_pkey'),
-        UniqueConstraint('account_name', 'model_name', 'call_time_hour', name='uq_letsgen_model_call_stat'),
-        Index('idx_letsgen_model_call_stat_account_name', 'account_name'),
-        Index('idx_letsgen_model_call_stat_call_time_hour', 'call_time_hour'),
-        Index('idx_letsgen_model_call_stat_model_name', 'model_name'),
-        Index('idx_letsgen_model_call_stat_period_last_call_at', 'period_last_call_at'),
-        {'comment': '模型调用统计表'}
-    )
-
-    id: int = Field(sa_column=Column('id', BigInteger, primary_key=True, comment='主键'))
-    account_name: str = Field(sa_column=Column('account_name', String(50), nullable=False, server_default=text("''::character varying"), comment='计费账号名'))
-    model_name: str = Field(sa_column=Column('model_name', String(50), nullable=False, server_default=text("''::character varying"), comment='模型名称'))
-    call_time_hour: datetime.datetime = Field(sa_column=Column('call_time_hour', DateTime(True), nullable=False, server_default=text("'2000-01-01 00:00:00+00'::timestamp with time zone"), comment='调用发起时间对应的开始小时'))
-    period_last_call_at: datetime.datetime = Field(sa_column=Column('period_last_call_at', DateTime(True), nullable=False, server_default=text("'2000-01-01 00:00:00+00'::timestamp with time zone"), comment='统计周期内最后一次调用时间'))
-    call_num: int = Field(sa_column=Column('call_num', Integer, nullable=False, server_default=text('0'), comment='统计周期内调用次数'))
-    failed_call_num: int = Field(sa_column=Column('failed_call_num', Integer, nullable=False, server_default=text('0'), comment='统计周期内失败调用次数'))
-    input_token_num: int = Field(sa_column=Column('input_token_num', Integer, nullable=False, server_default=text('0'), comment='统计周期内输入token数'))
-    cached_token_num: int = Field(sa_column=Column('cached_token_num', Integer, nullable=False, server_default=text('0'), comment='统计周期内缓存token数'))
-    output_token_num: int = Field(sa_column=Column('output_token_num', Integer, nullable=False, server_default=text('0'), comment='统计周期内输出token数'))
-    reason_token_num: int = Field(sa_column=Column('reason_token_num', Integer, nullable=False, server_default=text('0'), comment='统计周期内推理token数'))
-    create_at: datetime.datetime = Field(sa_column=Column('create_at', DateTime(True), nullable=False, server_default=text('now()'), comment='创建时间'))
-    update_at: datetime.datetime = Field(sa_column=Column('update_at', DateTime(True), nullable=False, server_default=text('now()'), comment='更新时间'))
-
-
 class LetsgenProviderCredential(SQLModel, table=True):
     __tablename__ = 'letsgen_provider_credential'
     __table_args__ = (

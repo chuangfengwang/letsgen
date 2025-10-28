@@ -40,12 +40,14 @@ async def chat_completions(
             llmTransferService.stream_generator(provider_resp, request.state.context),
             media_type="text/event-stream",
             headers={
+                "X-Request-Id": context.letsgen_req_id,
                 "qtraceid": context.trace_id,
                 "Cache-Control": "no-cache",
                 "Connection": "keep-alive",
             }
         )
     else:
+        response.headers["X-Request-Id"] = context.letsgen_req_id
         response.headers["qtraceid"] = context.trace_id
         return provider_resp
 

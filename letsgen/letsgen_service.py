@@ -11,6 +11,7 @@ import logging.config
 import os
 from contextlib import asynccontextmanager
 from json import JSONDecodeError
+from typing import cast
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -28,6 +29,8 @@ import letsgen.routers.prometheus_router as prometheus_router
 import letsgen.routers.sys_router as sys_router
 import letsgen.routers.ui_router as ui_router
 import letsgen.db.pg_connection as db_pg_connection
+from letsgen.entity.llm_entity import LlmRequestContext
+from letsgen.exceptions import error_class
 
 logging.config.dictConfig(concurrent_log.UVICORN_LOGGING_CONFIG)
 
@@ -94,10 +97,19 @@ async def global_exception_handler(request: Request, exc: Exception):
         body_bytes = b"<unreadable body>"
     logger.error(f"Letsgen error. path: {request.url.path}, method: {request.method}, body_bytes: {body_bytes}",
                  exc_info=True)
-    message = f'Letsgen service error'
+    context = cast(LlmRequestContext, request.state.context)
+    error_info = {"letsgen_req_id": context.letsgen_req_id, "qtraceid": context.trace_id}
+    headers = {"X-Request-Id": context.letsgen_req_id, "qtraceid": context.trace_id, }
+    if hasattr(exc, "message"):
+        error_info["message"] = exc.message
+    else:
+        message = f'Letsgen service error'
+        error_info["message"] = message
     return JSONResponse(
+        content={"error": error_info},
+        headers=headers,
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"error": {"message": message}})
+    )
 
 
 if __name__ == '__main__':

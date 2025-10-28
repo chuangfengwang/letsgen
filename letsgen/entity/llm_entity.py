@@ -17,6 +17,8 @@ import letsgen.entity.auth_entity as auth_entity
 
 class LlmRequestContext(BaseModel):
     # 请求唯一标识
+    letsgen_req_id: str | None = None
+    # trace_id 用于请求链路追踪
     trace_id: str | None = None
     # 项目代号, 用于按项目导出调用记录
     proj_id: str | None = None

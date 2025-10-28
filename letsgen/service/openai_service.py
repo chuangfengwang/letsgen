@@ -7,7 +7,10 @@
 """
 from __future__ import annotations
 
-from typing import Tuple, Any, Dict, Union, Set, List, Generator, AsyncGenerator
+import json
+import logging
+import os
+from typing import Tuple, Any, Dict, Union, Set, List, Generator, AsyncGenerator, cast
 
 import httpx
 from openai import AsyncOpenAI, AsyncStream
@@ -18,6 +21,8 @@ from letsgen.exceptions import error_class
 from letsgen.service.llm_api_transfer import LlmTransferService
 from letsgen.utils.function_util import all_param_expect_kwargs
 
+logger = logging.getLogger(__name__)
+
 
 class OpenAIService(LlmTransferService):
     """OpenAI 服务类"""
@@ -25,6 +30,15 @@ class OpenAIService(LlmTransferService):
     def __init__(self):
         self._client = {}
         self._openai_chat_completions_param = set(self._get_openai_chat_completion_params())
+
+        self.mock_provider = {
+            "ollama": ("http://127.0.0.1:11434/v1", "place_holder_api_key"),
+            "aliyun": ("https://dashscope.aliyuncs.com/compatible-mode/v1", os.environ.get("ALIYUN_API_KEY")),
+            "volcengine": ("https://ark.cn-beijing.volces.com/api/v3", os.environ.get("VOLCENGINE_API_KEY")),
+            "zhipu": ("https://open.bigmodel.cn/api/paas/v4", os.environ.get("ZHIPU_API_KEY")),
+        }
+        with open("volc_model_mapping.json", "r") as f:
+            self.mock_model_mapping = json.load(f)
 
     def _get_openai_chat_completion_params(self) -> List[str]:
         """获取 OpenAI Chat Completion 支持的参数列表"""
@@ -42,13 +56,18 @@ class OpenAIService(LlmTransferService):
         return params
 
     def pick_endpoint(self, model_id: str) -> Tuple[str, str]:
-        """获取模型对应的 endpoint
+        """todo: 获取模型对应的 endpoint
         :return (provider, endpoint)"""
-        return "local-ollama", "http://127.0.0.1:11434/v1"
+        provider, model = model_id.split("/", maxsplit=1)
+        endpoint, _ = self.mock_provider.get(provider)
+        return provider, endpoint
 
     def pick_endpoint_auth(self, endpoint: str) -> str:
-        """获取 endpoint 对应的鉴权信息"""
-        return ""
+        """todo: 获取 endpoint 对应的鉴权信息"""
+        for _, v in self.mock_provider.items():
+            if v[0] == endpoint:
+                return v[1]
+        return "place_holder_api_key"
 
     def pick_proxy(self, endpoint: str) -> str | None:
         """获取 endpoint 对应的代理信息"""
@@ -94,6 +113,14 @@ class OpenAIService(LlmTransferService):
             self._client[proxy].close()
             del self._client[proxy]
 
+    def model_mapping(self, letsgen_model_id: str) -> str:
+        """todo: 模型映射: letsgen_model_id -> 厂商模型ID"""
+        provider, model = letsgen_model_id.split("/", maxsplit=1)
+        if provider == "volcengine":
+            return self.mock_model_mapping.get(letsgen_model_id)
+        else:
+            return model
+
     def transfer_param(self, body: dict, headers: dict, queries: dict) -> dict:
         """转换参数
         :return : 传给厂商的参数
@@ -102,7 +129,11 @@ class OpenAIService(LlmTransferService):
         extra_body = {}
         for key in body:
             if key in self._openai_chat_completions_param:
-                param[key] = body[key]
+                # model 参数需要映射, 其他参数保持即可
+                if key == "model":
+                    param[key] = self.model_mapping(body[key])
+                else:
+                    param[key] = body[key]
             else:
                 extra_body[key] = body[key]
         if extra_body:
@@ -155,11 +186,20 @@ class OpenAIService(LlmTransferService):
 
     async def stream_generator(
         self,
-        stream_response: AsyncStream[ChatCompletionChunk],
+        stream_response,
         context: LlmRequestContext
     ) -> AsyncGenerator[str, None]:
         """流式响应生成器"""
-        async for chunk in stream_response:
-            context.end_chunk = chunk
-            yield f"data: {chunk.model_dump_json()}\n\n"
-        yield "data: [DONE]\n\n"
+        try:
+            stream_response = cast(AsyncStream[ChatCompletionChunk], stream_response)
+            async for chunk in stream_response:
+                context.end_chunk = chunk
+                yield f"data: {chunk.model_dump_json()}\n\n"
+        except Exception as e:
+            context.error = e
+            msg = {"error": str(e), "letsgenReqId": context.letsgen_req_id, "traceId": context.trace_id}
+            logger.error(f"OpenAIService stream_generator error: {json.dumps(msg)}", exc_info=True)
+            yield f"event: error\n"
+            yield f"data: {json.dumps(msg)}\n\n"
+        finally:
+            yield "data: [DONE]\n\n"
