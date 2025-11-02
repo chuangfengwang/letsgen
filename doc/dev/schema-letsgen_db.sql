@@ -186,15 +186,17 @@ comment on column letsgen_model.update_at is '更新时间';
 -- 账号模型权限表 letsgen_account_model_rlt
 create table letsgen_account_model_rlt
 (
-    id              BIGSERIAL   not null,
-    account_name    varchar(50) not null default '', -- 计费账号名
-    model_name      varchar(50) not null default '', -- 模型名称
-    apply_user_name varchar(50) not null default '', -- 申请用户
-    rpm_limit       integer     not null default 0,  -- 每分钟请求数限制
-    tpm_limit       integer     not null default 0,  -- 每分钟 token 数限制
-    concurrent      integer     not null default 0,  -- 并发请求数限制
-    create_at       TIMESTAMPTZ not null default now(),
-    update_at       TIMESTAMPTZ not null default now(),
+    id               BIGSERIAL   not null,
+    account_name     varchar(50) not null default '', -- 计费账号名
+    model_name       varchar(50) not null default '', -- 模型名称
+    apply_user_name  varchar(50) not null default '', -- 申请用户
+    rpd_limit        integer     not null default -1, -- 周期内请求数限制-请求次数
+    rpd_duration     integer     not null default 60, -- 周期内请求数限制-时间周期,单位:秒
+    tpd_limit        integer     not null default -1, -- 周期内 token 数限制 - token 数
+    tpd_duration     integer     not null default 60, -- 周期内 token 数限制 - 时间周期,单位:秒
+    concurrent_limit integer     not null default -1, -- 并发请求数限制
+    create_at        TIMESTAMPTZ not null default now(),
+    update_at        TIMESTAMPTZ not null default now(),
     PRIMARY KEY (id),
     CONSTRAINT uq_letsgen_account_model_rlt UNIQUE (account_name, model_name)
 );
@@ -207,9 +209,11 @@ comment on column letsgen_account_model_rlt.id is '主键';
 comment on column letsgen_account_model_rlt.account_name is '计费账号名';
 comment on column letsgen_account_model_rlt.model_name is '模型名称';
 comment on column letsgen_account_model_rlt.apply_user_name is '申请用户';
-comment on column letsgen_account_model_rlt.rpm_limit is '每分钟请求数限制';
-comment on column letsgen_account_model_rlt.tpm_limit is '每分钟 token 数限制';
-comment on column letsgen_account_model_rlt.concurrent is '并发请求数限制';
+comment on column letsgen_account_model_rlt.rpd_limit is '周期内请求数限制-请求次数';
+comment on column letsgen_account_model_rlt.rpd_duration is '周期内请求数限制-时间周期,单位:秒';
+comment on column letsgen_account_model_rlt.tpd_limit is '周期内 token 数限制 - token 数';
+comment on column letsgen_account_model_rlt.tpd_duration is '周期内 token 数限制 - 时间周期,单位:秒';
+comment on column letsgen_account_model_rlt.concurrent_limit is '并发请求数限制';
 comment on column letsgen_account_model_rlt.create_at is '创建时间';
 comment on column letsgen_account_model_rlt.update_at is '更新时间';
 
@@ -266,7 +270,34 @@ create table letsgen_provider_endpoint
 );
 
 -- 模型-接入点表 letsgen_model_endpoint
-create table
+create table letsgen_model_endpoint
+(
+    id               BIGSERIAL   not null,
+    model_name       varchar(50) not null default '', -- 模型名称
+    provider_name    varchar(50) not null default '', -- 接入厂商名
+    endpoint_name    varchar(50) not null default '', -- endpoint 名称
+    rpd_limit        integer     not null default -1, -- 周期内请求数限制-请求次数
+    rpd_duration     integer     not null default 60, -- 周期内请求数限制-时间周期,单位:秒
+    tpd_limit        integer     not null default -1, -- 周期内 token 数限制 - token 数
+    tpd_duration     integer     not null default 60, -- 周期内 token 数限制 - 时间周期,单位:秒
+    concurrent_limit integer     not null default -1, -- 并发请求数限制
+    create_at        TIMESTAMPTZ not null default now(),
+    update_at        TIMESTAMPTZ not null default now(),
+    PRIMARY KEY (id),
+    CONSTRAINT uq_letsgen_model_endpoint UNIQUE (model_name, provider_name, endpoint_name)
+);
+comment on table letsgen_model_endpoint is '模型-接入点表';
+comment on column letsgen_model_endpoint.id is '主键';
+comment on column letsgen_model_endpoint.model_name is '模型名称';
+comment on column letsgen_model_endpoint.provider_name is '接入厂商名';
+comment on column letsgen_model_endpoint.endpoint_name is 'endpoint 名称';
+comment on column letsgen_model_endpoint.rpd_limit is '周期内请求数限制-请求次数';
+comment on column letsgen_model_endpoint.rpd_duration is '周期内请求数限制-时间周期,单位:秒';
+comment on column letsgen_model_endpoint.tpd_limit is '周期内 token 数限制 - token 数';
+comment on column letsgen_model_endpoint.tpd_duration is '周期内 token 数限制 - 时间周期,单位:秒';
+comment on column letsgen_model_endpoint.concurrent_limit is '并发请求数限制';
+comment on column letsgen_model_endpoint.create_at is '创建时间';
+comment on column letsgen_model_endpoint.update_at is '更新时间';
 
 -- 用户(n)-(n)计费账号(1)-(n)ApiKey
 -- 账号(1)-(n)钱包, 每个币种一个钱包

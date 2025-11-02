@@ -1,0 +1,20 @@
+# -*- coding: utf-8 -*-
+"""
+# @File    : ui_entity.py
+# @Desc    : 
+# @Author  : chuangfeng.wang
+# @Time    : 2025-11-01 00:51
+"""
+from __future__ import annotations
+
+from datetime import datetime
+from typing import List, Tuple, Dict, Any
+
+from pydantic import BaseModel, ConfigDict
+
+
+class UiBaseResponse(BaseModel):
+    """Ui接口基础响应实体"""
+    status: int = 0
+    message: str | None = None
+    data: Any | None = None

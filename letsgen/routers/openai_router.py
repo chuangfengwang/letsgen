@@ -16,10 +16,10 @@ from fastapi.responses import StreamingResponse
 import letsgen.dependencies.auth as auth
 from letsgen.entity.llm_entity import LlmRequestContext
 from letsgen.service.llm_api_transfer import LlmTransferService
-from letsgen.service.openai_service import OpenAIService
+from letsgen.service.openai_service import OpenAiService
 
 router = APIRouter(prefix="/api/openai/v1", tags=["openai"])
-llmTransferService: LlmTransferService = OpenAIService()
+llmTransferService: LlmTransferService = OpenAiService()
 
 
 @router.post("/chat/completions")

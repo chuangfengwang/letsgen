@@ -15,6 +15,9 @@ from starlette.requests import Request
 
 from letsgen.entity.auth_entity import (LetsgenCookies, LetsgenHeaders, Identity)
 from letsgen.entity.llm_entity import (LlmRequestContext)
+from letsgen.service.ui_normal_service import UiNormalService
+
+ui_normal_service = UiNormalService()
 
 
 async def jwt_authorize_check(
@@ -26,10 +29,9 @@ async def jwt_authorize_check(
     """
     if not cookies.jwt:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing authorization")
-    identity = Identity(
-        user_name="wcf",
-        account_name="wcf_account",
-    )
+
+    identity = ui_normal_service.check_jwt(cookies.jwt)
+
     context = cast(LlmRequestContext, request.state.context)
     context.identity = identity
     return identity

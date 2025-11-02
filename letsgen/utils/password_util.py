@@ -9,17 +9,14 @@ from __future__ import annotations
 
 import base64
 import datetime
-from typing import Dict, Any, List
 import logging
+from typing import Dict, Any, List
 
 import bcrypt
 import jwt
 from Crypto.Cipher import AES
 
 import letsgen.config as config
-
-# jwt 加密算法: HS256
-JWT_ALGORITHM = "HS256"
 
 logger = logging.getLogger(__name__)
 
@@ -93,7 +90,11 @@ def decrypt_aes(encrypted_text: str, aes_key: str = config.letsgen_encryption_ke
     return decrypted_text.strip()
 
 
-def create_jwt(user_name: str, role_list: List[str], expire_after_minutes: float) -> str:
+def create_jwt(
+    user_name: str,
+    role_list: List[str],
+    expire_after_minutes: float = config.letsgen_jwt_expire_minutes
+) -> str:
     """
     颁发 JWT Token
     """
@@ -113,7 +114,7 @@ def create_jwt(user_name: str, role_list: List[str], expire_after_minutes: float
     encoded_jwt = jwt.encode(
         payload,
         config.letsgen_jwt_secret_key,
-        algorithm=JWT_ALGORITHM
+        algorithm=config.letsgen_jwt_algorithm
     )
 
     return encoded_jwt
@@ -129,7 +130,7 @@ def verify_jwt(token: str) -> Dict[str, Any] | None:
         payload = jwt.decode(
             token,
             config.letsgen_jwt_secret_key,
-            algorithms=[JWT_ALGORITHM],
+            algorithms=[config.letsgen_jwt_algorithm],
             leeway=0,
         )
         return payload

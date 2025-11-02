@@ -7,6 +7,8 @@
 """
 from __future__ import annotations
 
+from typing import List
+
 from pydantic import BaseModel
 
 
@@ -19,5 +21,8 @@ class LetsgenHeaders(BaseModel):
 
 
 class Identity(BaseModel):
+    # user_name roles 用于 ui 交互
     user_name: str | None = None
+    roles: List[str] = []
+    # account_name 用户 api 交互
     account_name: str | None = None

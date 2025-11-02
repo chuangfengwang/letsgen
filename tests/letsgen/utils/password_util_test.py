@@ -86,7 +86,7 @@ def test_jwt_functions():
         "iat": now - datetime.timedelta(hours=1),  # 一小时前签发
         "exp": now - datetime.timedelta(minutes=1),  # 一分钟前过期
     }
-    expired_token = jwt.encode(expired_payload, config.letsgen_jwt_secret_key, algorithm=JWT_ALGORITHM)
+    expired_token = jwt.encode(expired_payload, config.letsgen_jwt_secret_key, algorithm=config.letsgen_jwt_algorithm)
 
     auth_header_expired = f"Bearer {expired_token}"
     response_expired = protected_api_endpoint(auth_header_expired)

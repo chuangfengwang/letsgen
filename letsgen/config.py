@@ -7,11 +7,11 @@
 """
 import os
 import shutil
-import sys
 
 from dotenv import load_dotenv
 
 # 确保当前文件所在目录在 sys.path 中
+# import sys
 # sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # 加载环境变量
@@ -29,7 +29,7 @@ timeout_keep_alive = 5
 work_dir = os.path.dirname(os.path.abspath(__file__))
 
 # 日志
-logs_dir = os.path.join(work_dir, "logs")
+logs_dir = os.path.join(work_dir, "../logs")
 os.makedirs(logs_dir, exist_ok=True)
 info_logfile = os.path.join(logs_dir, "info.log")
 warn_logfile = os.path.join(logs_dir, "warn.log")
@@ -78,3 +78,7 @@ elif len(letsgen_encryption_key) < 16:
     raise ValueError("LETSGEN_ENCRYPTION_KEY length must be 16, 24, or 32 bytes")
 # JWT 秘钥
 letsgen_jwt_secret_key = os.environ.get("LETSGEN_JWT_SECRET_KEY")
+if not letsgen_jwt_secret_key:
+    raise ValueError("LETSGEN_JWT_SECRET_KEY is not set")
+letsgen_jwt_algorithm = "HS256"  # JWT 加密算法
+letsgen_jwt_expire_minutes = 60 * 24 * 1  # 默认 JWT 过期时间: 1 天

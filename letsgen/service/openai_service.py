@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 import logging
 import os
-from typing import Tuple, Any, Dict, Union, Set, List, Generator, AsyncGenerator, cast
+from typing import Tuple, Any, Dict, Union, List, AsyncGenerator, cast
 
 import httpx
 from openai import AsyncOpenAI, AsyncStream
@@ -24,7 +24,7 @@ from letsgen.utils.function_util import all_param_expect_kwargs
 logger = logging.getLogger(__name__)
 
 
-class OpenAIService(LlmTransferService):
+class OpenAiService(LlmTransferService):
     """OpenAI 服务类"""
 
     def __init__(self):
@@ -117,7 +117,7 @@ class OpenAIService(LlmTransferService):
         """todo: 模型映射: letsgen_model_id -> 厂商模型ID"""
         provider, model = letsgen_model_id.split("/", maxsplit=1)
         if provider == "volcengine":
-            return self.mock_model_mapping.get(letsgen_model_id)
+            return self.mock_model_mapping.get(model)
         else:
             return model
 
@@ -197,7 +197,8 @@ class OpenAIService(LlmTransferService):
                 yield f"data: {chunk.model_dump_json()}\n\n"
         except Exception as e:
             context.error = e
-            msg = {"error": str(e), "letsgenReqId": context.letsgen_req_id, "traceId": context.trace_id}
+            error_msg = e.message if hasattr(e, "message") else str(e)
+            msg = {"error": error_msg, "letsgen_req_id": context.letsgen_req_id, "qtraceid": context.trace_id}
             logger.error(f"OpenAIService stream_generator error: {json.dumps(msg)}", exc_info=True)
             yield f"event: error\n"
             yield f"data: {json.dumps(msg)}\n\n"

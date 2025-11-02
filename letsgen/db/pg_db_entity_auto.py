@@ -37,9 +37,11 @@ class LetsgenAccountModelRlt(SQLModel, table=True):
     account_name: str = Field(sa_column=Column('account_name', String(50), nullable=False, server_default=text("''::character varying"), comment='计费账号名'))
     model_name: str = Field(sa_column=Column('model_name', String(50), nullable=False, server_default=text("''::character varying"), comment='模型名称'))
     apply_user_name: str = Field(sa_column=Column('apply_user_name', String(50), nullable=False, server_default=text("''::character varying"), comment='申请用户'))
-    rpm_limit: int = Field(sa_column=Column('rpm_limit', Integer, nullable=False, server_default=text('0'), comment='每分钟请求数限制'))
-    tpm_limit: int = Field(sa_column=Column('tpm_limit', Integer, nullable=False, server_default=text('0'), comment='每分钟 token 数限制'))
-    concurrent: int = Field(sa_column=Column('concurrent', Integer, nullable=False, server_default=text('0'), comment='并发请求数限制'))
+    rpd_limit: int = Field(sa_column=Column('rpd_limit', Integer, nullable=False, server_default=text("'-1'::integer"), comment='周期内请求数限制-请求次数'))
+    rpd_duration: int = Field(sa_column=Column('rpd_duration', Integer, nullable=False, server_default=text('60'), comment='周期内请求数限制-时间周期,单位:秒'))
+    tpd_limit: int = Field(sa_column=Column('tpd_limit', Integer, nullable=False, server_default=text("'-1'::integer"), comment='周期内 token 数限制 - token 数'))
+    tpd_duration: int = Field(sa_column=Column('tpd_duration', Integer, nullable=False, server_default=text('60'), comment='周期内 token 数限制 - 时间周期,单位:秒'))
+    concurrent_limit: int = Field(sa_column=Column('concurrent_limit', Integer, nullable=False, server_default=text("'-1'::integer"), comment='并发请求数限制'))
     create_at: datetime.datetime = Field(sa_column=Column('create_at', DateTime(True), nullable=False, server_default=text('now()'), comment='创建时间'))
     update_at: datetime.datetime = Field(sa_column=Column('update_at', DateTime(True), nullable=False, server_default=text('now()'), comment='更新时间'))
 
@@ -90,6 +92,27 @@ class LetsgenModel(SQLModel, table=True):
     price_info: str = Field(sa_column=Column('price_info', Text, nullable=False, server_default=text("''::text"), comment='价格信息,json格式'))
     reference_urls: str = Field(sa_column=Column('reference_urls', Text, nullable=False, server_default=text("''::text"), comment='相关链接,包括价格/参数支持/quota,json格式'))
     note: str = Field(sa_column=Column('note', Text, nullable=False, server_default=text("''::text"), comment='模型备注'))
+    create_at: datetime.datetime = Field(sa_column=Column('create_at', DateTime(True), nullable=False, server_default=text('now()'), comment='创建时间'))
+    update_at: datetime.datetime = Field(sa_column=Column('update_at', DateTime(True), nullable=False, server_default=text('now()'), comment='更新时间'))
+
+
+class LetsgenModelEndpoint(SQLModel, table=True):
+    __tablename__ = 'letsgen_model_endpoint'
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='letsgen_model_endpoint_pkey'),
+        UniqueConstraint('model_name', 'provider_name', 'endpoint_name', name='uq_letsgen_model_endpoint'),
+        {'comment': '模型-接入点表'}
+    )
+
+    id: int = Field(sa_column=Column('id', BigInteger, primary_key=True, comment='主键'))
+    model_name: str = Field(sa_column=Column('model_name', String(50), nullable=False, server_default=text("''::character varying"), comment='模型名称'))
+    provider_name: str = Field(sa_column=Column('provider_name', String(50), nullable=False, server_default=text("''::character varying"), comment='接入厂商名'))
+    endpoint_name: str = Field(sa_column=Column('endpoint_name', String(50), nullable=False, server_default=text("''::character varying"), comment='endpoint 名称'))
+    rpd_limit: int = Field(sa_column=Column('rpd_limit', Integer, nullable=False, server_default=text("'-1'::integer"), comment='周期内请求数限制-请求次数'))
+    rpd_duration: int = Field(sa_column=Column('rpd_duration', Integer, nullable=False, server_default=text('60'), comment='周期内请求数限制-时间周期,单位:秒'))
+    tpd_limit: int = Field(sa_column=Column('tpd_limit', Integer, nullable=False, server_default=text("'-1'::integer"), comment='周期内 token 数限制 - token 数'))
+    tpd_duration: int = Field(sa_column=Column('tpd_duration', Integer, nullable=False, server_default=text('60'), comment='周期内 token 数限制 - 时间周期,单位:秒'))
+    concurrent_limit: int = Field(sa_column=Column('concurrent_limit', Integer, nullable=False, server_default=text("'-1'::integer"), comment='并发请求数限制'))
     create_at: datetime.datetime = Field(sa_column=Column('create_at', DateTime(True), nullable=False, server_default=text('now()'), comment='创建时间'))
     update_at: datetime.datetime = Field(sa_column=Column('update_at', DateTime(True), nullable=False, server_default=text('now()'), comment='更新时间'))
 

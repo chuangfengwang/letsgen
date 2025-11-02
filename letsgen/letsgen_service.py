@@ -20,6 +20,8 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 import letsgen.config as config
+import letsgen.db.pg_connection as db_pg_connection
+import letsgen.exceptions.error_class as error_class
 import letsgen.log.concurrent_log as concurrent_log
 import letsgen.middlewares.distributed_concurrency as distributed_concurrency
 import letsgen.middlewares.e2e_tracelog_middleware as e2e_tracelog_middleware
@@ -27,12 +29,12 @@ import letsgen.routers.api_sys_router as api_sys_router
 import letsgen.routers.openai_router as openai_router
 import letsgen.routers.prometheus_router as prometheus_router
 import letsgen.routers.sys_router as sys_router
-import letsgen.routers.ui_router as ui_router
-import letsgen.db.pg_connection as db_pg_connection
+import letsgen.routers.ui_admin_router as ui_admin_router
+import letsgen.routers.ui_normal_router as ui_normal_router
+import letsgen.routers.ui_sys_router as ui_sys_router
 from letsgen.entity.llm_entity import LlmRequestContext
-from letsgen.exceptions import error_class
 
-logging.config.dictConfig(concurrent_log.UVICORN_LOGGING_CONFIG)
+# logging.config.dictConfig(concurrent_log.UVICORN_LOGGING_CONFIG)
 
 logger = logging.getLogger(__name__)
 dw_logger = logging.getLogger("data-warehouse")
@@ -74,7 +76,9 @@ app.include_router(api_sys_router.router)
 # openai 兼容接口
 app.include_router(openai_router.router)
 # UI 用到的接口
-app.include_router(ui_router.router)
+app.include_router(ui_admin_router.router)
+app.include_router(ui_normal_router.router)
+app.include_router(ui_sys_router.router)
 
 # 前端/静态资源
 app.mount("/ui", StaticFiles(directory=config.ui_static_dir), name="ui_static")
@@ -105,10 +109,16 @@ async def global_exception_handler(request: Request, exc: Exception):
     else:
         message = f'Letsgen service error'
         error_info["message"] = message
+    # 响应码
+    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+    if isinstance(exc, error_class.AuthorizationError):
+        status_code = status.HTTP_401_UNAUTHORIZED
+    elif isinstance(exc, error_class.ParamError):
+        status_code = status.HTTP_400_BAD_REQUEST
     return JSONResponse(
         content={"error": error_info},
         headers=headers,
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        status_code=status_code,
     )
 
 
@@ -124,6 +134,8 @@ if __name__ == '__main__':
         workers=config.letsgen_workers,
         timeout_keep_alive=config.timeout_keep_alive,
         limit_max_requests=None,  # 不限制请求数
-        # access_log=False,  # 使用自定义日志
+        # access_log=False,  # 禁用 access 日志
+        proxy_headers=True,  # 启用 X-Forwarded-For 支持
+        forwarded_allow_ips="192.168.0.0/16,172.16.0.0/12,10.0.0.0/8,127.0.0.1,[::1]",  # 信任反代ip范围为局域网 ip
         log_config=concurrent_log.UVICORN_LOGGING_CONFIG,  # 禁用默认日志配置
     )
