@@ -111,10 +111,12 @@ async def global_exception_handler(request: Request, exc: Exception):
         error_info["message"] = message
     # 响应码
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-    if isinstance(exc, error_class.AuthorizationError):
+    if isinstance(exc, (error_class.UiAuthorizationError, error_class.LlmAuthorizationError)):
         status_code = status.HTTP_401_UNAUTHORIZED
-    elif isinstance(exc, error_class.ParamError):
+    elif isinstance(exc, (error_class.UiParamError, error_class.LlmParamError)):
         status_code = status.HTTP_400_BAD_REQUEST
+    elif isinstance(exc, (error_class.ProviderRateLimitError,)):
+        status_code = status.HTTP_429_TOO_MANY_REQUESTS
     return JSONResponse(
         content={"error": error_info},
         headers=headers,

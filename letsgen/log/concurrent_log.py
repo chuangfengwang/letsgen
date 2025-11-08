@@ -5,15 +5,7 @@
 # @Author  : chuangfeng.wang
 # @Time    : 2025-08-23 16:48
 """
-import atexit
-import logging
-import logging.config
 import logging.handlers
-import queue
-import sys
-from typing import Dict, Any
-
-from concurrent_log_handler import ConcurrentTimedRotatingFileHandler
 
 import letsgen.config as config
 

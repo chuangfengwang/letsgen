@@ -14,6 +14,7 @@ from fastapi import APIRouter, Request, Response, Depends, BackgroundTasks
 from fastapi.responses import StreamingResponse
 
 import letsgen.dependencies.auth as auth
+from letsgen.entity.auth_entity import Identity
 from letsgen.entity.llm_entity import LlmRequestContext
 from letsgen.service.llm_api_transfer import LlmTransferService
 from letsgen.service.openai_service import OpenAiService
@@ -27,7 +28,7 @@ async def chat_completions(
     request: Request,
     response: Response,
     background_tasks: BackgroundTasks,
-    identity: auth.Identity = Depends(auth.header_authorize_check),
+    identity: Identity = Depends(auth.header_authorize_check),
 ):
     """
     OpenAI Chat Completions API

@@ -30,7 +30,7 @@ class UiAdminService:
         if await pg_db_dao.admin_user_exist():
             msg = "First admin existing. Using admin user to create or confirm other admin users."
             logger.error(msg)
-            raise error_class.OpsUiConfigError(msg)
+            raise error_class.UiOpsConfigError(msg)
 
         letsgen_user = LetsgenUser(
             user_name=user.user_name,
@@ -44,6 +44,6 @@ class UiAdminService:
         letsgen_user = await pg_db_dao.create_first_admin(letsgen_user)
         if not letsgen_user:
             msg = f"Create first admin user failed. user_name: {user.user_name}"
-            raise error_class.OpsUiConfigError(msg)
+            raise error_class.UiOpsConfigError(msg)
         # 创建成功
         return True

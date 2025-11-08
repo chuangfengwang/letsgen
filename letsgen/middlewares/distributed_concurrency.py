@@ -222,12 +222,12 @@ class ConcurrencyLimitMiddleware(BaseHTTPMiddleware):
             model_id = request.query_params.get("model", "")
             # todo: for debug
             if not model_id:
-                raise error_class.ParamError("can not find model_id")
+                raise error_class.LlmParamError("can not find model_id")
         if not account:
             account = request.query_params.get("account", "")
             # todo: for debug
             if not model_id:
-                raise error_class.ParamError("can not find account")
+                raise error_class.LlmParamError("can not find account")
 
         # 并发控制维度: 账号+模型
         control_key = f"{account}-{model_id}"

@@ -8,7 +8,7 @@
 
 from fastapi import APIRouter
 
-import letsgen.entity.ui_entity as ui_entity
+import letsgen.entity.ui_common_entity as ui_entity
 from letsgen.entity.ui_normal_router_entity import *
 from letsgen.service.ui_normal_service import UiNormalService
 

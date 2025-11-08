@@ -66,7 +66,7 @@ class LlmTransferService:
         body = context.origin_body_param
         headers = {}
         if body is None:
-            raise error_class.ParamError("Missing body param")
+            raise error_class.LlmParamError("Missing body param")
         model_id, is_stream = self.parse_model_and_stream(body)
         context.model_id = model_id
         context.is_stream = is_stream

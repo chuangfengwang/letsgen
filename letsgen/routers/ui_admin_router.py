@@ -9,13 +9,15 @@
 from fastapi import APIRouter, Depends
 
 import letsgen.dependencies.auth as auth
-import letsgen.entity.ui_entity as ui_entity
-from letsgen.entity.ui_admin_router_entity import FirstAdminUser
+import letsgen.entity.ui_common_entity as ui_entity
+from letsgen.entity.ui_admin_router_entity import FirstAdminUser, UserForm
 from letsgen.service.ui_admin_service import UiAdminService
+from letsgen.service.ui_normal_service import UiNormalService
 
 router = APIRouter(prefix="/api/ui/admin")
 
 ui_admin_service = UiAdminService()
+ui_normal_service = UiNormalService()
 
 
 @router.post("/create_first_admin_user")
@@ -38,15 +40,15 @@ async def create_first_admin_user(user: FirstAdminUser):
 # 创建其他用户
 @router.post("/create_user")
 async def create_user(
-    user: FirstAdminUser,
+    user: UserForm,
     identity: auth.Identity = Depends(auth.jwt_authorize_check),
 ):
     """创建用户"""
-
+    await ui_normal_service.create_user(user=user, by_admin=identity)
     return ui_entity.UiBaseResponse(
         status=0,
         message="",
-        data={"username": "admin", "password": "changeme123"}
+        data={}
     )
 
 # 修改其他用户信息

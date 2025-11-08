@@ -15,7 +15,7 @@ def get_bear(request: Request) -> str:
     if authorization.startswith("bear "):
         bear_token = authorization.split(" ", maxsplit=1)[1]
         return bear_token
-    raise error_class.AuthorizationError(f"bear error!")
+    raise error_class.LlmAuthorizationError(f"bear error!")
 
 
 async def check_and_parse_bear(bear_token: str) -> str:
@@ -33,5 +33,5 @@ async def get_account(request: Request) -> str:
         # todo: debug
         account = request.query_params.get("account", "")
         if not account:
-            raise error_class.AuthorizationError(f"debug account error!")
+            raise error_class.LlmAuthorizationError(f"debug account error!")
         return account

@@ -180,7 +180,7 @@ class OpenAiService(LlmTransferService):
         """解析 body 中的 model 和 stream 参数"""
         model_id = body.get("model")
         if model_id is None:
-            raise error_class.ParamError("Missing model param")
+            raise error_class.LlmParamError("Missing model param")
         is_stream = body.get("stream", False)
         return model_id, is_stream
 

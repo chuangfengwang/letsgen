@@ -10,11 +10,13 @@ from __future__ import annotations
 import logging
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.sql import text
-from sqlalchemy import select, delete, update, insert
+from sqlalchemy import select, delete, update, insert, func, and_, or_
 
 import letsgen.db.pg_connection as pg_connection
 
 from letsgen.db.pg_db_entity_auto import (LetsgenUser, )
+from letsgen.entity.ui_admin_router_entity import UserForm
+from letsgen.exceptions import error_class
 from letsgen.utils.password_util import hash_password
 
 logger = logging.getLogger(__name__)
@@ -62,6 +64,63 @@ async def user_login(user_name: str) -> LetsgenUser | None:
         user = result.scalar_one_or_none()
         return user
 
-# 创建用户
+
+async def check_user_exist(user: UserForm) -> bool:
+    """检查用户是否存在"""
+    db_engine = await pg_connection.async_db_pg_engine()
+
+    async_session_local = async_sessionmaker(bind=db_engine, class_=AsyncSession, expire_on_commit=False)
+    async with async_session_local() as session:
+        stmt_filtered = (
+            select(func.count(1))
+            .select_from(LetsgenUser)
+            .where(LetsgenUser.user_name == user.user_name)
+        )
+        user_count = await session.scalar(stmt_filtered)
+        if user_count > 0:
+            raise error_class.UiParamConflictError(f"User name already exists: {user.user_name}")
+
+        if user.user_email:
+            stmt_filtered = (
+                select(func.count(1))
+                .select_from(LetsgenUser)
+                .where(LetsgenUser.user_email == user.user_email)
+            )
+            user_count = await session.scalar(stmt_filtered)
+            if user_count > 0:
+                raise error_class.UiParamConflictError(f"User email already exists: {user.user_email}")
+
+        if user.user_phone:
+            stmt_filtered = (
+                select(func.count(1))
+                .select_from(LetsgenUser)
+                .where(LetsgenUser.user_phone == user.user_phone)
+            )
+            user_count = await session.scalar(stmt_filtered)
+            if user_count > 0:
+                raise error_class.UiParamConflictError(f"User phone already exists: {user.user_phone}")
+    return True
+
+
+async def create_user(user: UserForm) -> LetsgenUser:
+    """创建用户"""
+    letsgen_user = LetsgenUser(
+        user_name=user.user_name,
+        user_email=user.user_email,
+        user_password=hash_password(user.password_plain),
+        user_phone=user.user_phone,
+        ui_role=user.ui_role,
+        user_status=user.user_status,
+        note=user.note,
+        **{}
+    )
+    db_engine = await pg_connection.async_db_pg_engine()
+    async_session_local = async_sessionmaker(bind=db_engine, class_=AsyncSession, expire_on_commit=False)
+    async with async_session_local() as session:
+        async with session.begin():
+            session.add(letsgen_user)
+            await session.flush()
+            return letsgen_user
+
 # 创建账号
 # 创建 api-key
