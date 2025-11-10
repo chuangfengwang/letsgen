@@ -6,12 +6,19 @@
 # @Time    : 2025-08-21 21:25
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 import letsgen.entity.ui_common_entity as ui_entity
+from letsgen.dependencies import auth
+from letsgen.entity.api_common_entity import BillAccountForm
+from letsgen.entity.auth_entity import Identity
+from letsgen.entity.ui_admin_router_entity import UserForm
 from letsgen.entity.ui_normal_router_entity import *
+from letsgen.exceptions import error_class
 from letsgen.service.ui_normal_service import UiNormalService
+import logging
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/ui/normal")
 
 ui_normal_service = UiNormalService()
@@ -28,6 +35,7 @@ async def login(form: LoginEntity):
         data={"jwt": jwt}
     )
 
+
 # 用户注册
 
 # 修改密码
@@ -38,6 +46,21 @@ async def login(form: LoginEntity):
 
 
 # 创建 llm 账户
+@router.post("/create_account")
+async def create_account(
+    account: BillAccountForm,
+    identity: Identity = Depends(auth.jwt_authorize_check),
+):
+    if not identity.user_name:
+        msg = "Create account need ui login!"
+        logger.error(msg)
+        raise error_class.UiOpsConfigError(msg)
+    await ui_normal_service.create_account(account, identity)
+    return ui_entity.UiBaseResponse(
+        status=0,
+        message="",
+        data={}
+    )
 
 # 修改 llm 账户信息
 

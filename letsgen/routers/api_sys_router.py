@@ -17,7 +17,7 @@ router = APIRouter(prefix="/api/sys", tags=["api_sys"])
 
 
 # todo: 鉴权
-@router.get("/concurrency/account/{account}")
+@router.get("/concurrency/account")
 async def account_concurrency(account: str, model_id: str):
     """查询某个账户指定模型的并发数"""
     counter = distributed_concurrency.ConcurrencyLimitMiddleware.get_counter()
@@ -36,7 +36,7 @@ async def in_redis_instances():
     return {"query_time": now_str, "instances": instances}
 
 
-@router.get("/concurrency/allInstanceConcurrency")
+@router.get("/concurrency/allInstanceConcurrency", tags=["dangerous"])
 async def all_instance_concurrency():
     """查询所有实例的并发数（所有用户所有模型总和）"""
     counter = distributed_concurrency.ConcurrencyLimitMiddleware.get_counter()

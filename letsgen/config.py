@@ -63,7 +63,7 @@ llm_api_max_timeout = 600000
 
 # 需要监控 并发/tpm/qpm 的路径
 letsgen_llm_api = {
-    "/api/openai/v1/chat/completion",
+    "/api/openai/v1/chat/completions",
 }
 
 # 加解密秘钥. 必须是 16/24/32 位字节长度的字符串

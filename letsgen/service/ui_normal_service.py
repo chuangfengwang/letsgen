@@ -9,10 +9,13 @@ from __future__ import annotations
 
 import logging
 
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+
 import letsgen.db.pg_db_dao as pg_db_dao
 import letsgen.exceptions.error_class as error_class
 import letsgen.utils.password_util as password_util
-from letsgen.db.pg_db_entity_auto import LetsgenUser
+from letsgen.db.pg_db_entity_auto import LetsgenUser, LetsgenBillAccount
+from letsgen.entity.api_common_entity import BillAccountForm
 from letsgen.entity.auth_entity import Identity
 from letsgen.entity.ui_admin_router_entity import UserForm
 from letsgen.entity.ui_normal_router_entity import (LoginEntity, )
@@ -61,3 +64,22 @@ class UiNormalService:
         await pg_db_dao.check_user_exist(user)
         letsgen_user = await pg_db_dao.create_user(user)
         return letsgen_user
+
+    async def create_account(self, account: BillAccountForm, identity: Identity) -> LetsgenBillAccount:
+        """
+        创建一个计费账号
+        :param account: 用户填入的账号信息(bill account)
+        :param identity: 创建者的用户信息(user)
+        :return: 创建的账号
+        """
+        try:
+            letsgen_account = await pg_db_dao.create_account(account, identity.user_name)
+            return letsgen_account
+        except IntegrityError as e:
+            msg = f"Conflict with existing data."
+            logger.error(msg + f" account: {account.account_name}", exc_info=True)
+            raise error_class.UiOpsConfigError(msg)
+        except SQLAlchemyError as e:
+            msg = f"Create account error. Please contact system admin."
+            logger.error(msg + f" account: {account.account_name}", exc_info=True)
+            raise error_class.UiOpsConfigError(msg)

@@ -12,7 +12,7 @@ from letsgen.exceptions import error_class
 
 def get_bear(request: Request) -> str:
     authorization = request.headers.get("Authorization", "")
-    if authorization.startswith("bear "):
+    if authorization.startswith("Bearer "):
         bear_token = authorization.split(" ", maxsplit=1)[1]
         return bear_token
     raise error_class.LlmAuthorizationError(f"bear error!")

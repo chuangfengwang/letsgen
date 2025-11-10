@@ -16,3 +16,4 @@ class LoginEntity(BaseModel):
     """登录实体"""
     user_name: str = Field(min_length=2, max_length=50)
     password_plain: str = Field(min_length=6, max_length=64)
+

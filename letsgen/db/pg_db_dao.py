@@ -14,7 +14,8 @@ from sqlalchemy import select, delete, update, insert, func, and_, or_
 
 import letsgen.db.pg_connection as pg_connection
 
-from letsgen.db.pg_db_entity_auto import (LetsgenUser, )
+from letsgen.db.pg_db_entity_auto import (LetsgenUser, LetsgenBillAccount, )
+from letsgen.entity.api_common_entity import BillAccountForm
 from letsgen.entity.ui_admin_router_entity import UserForm
 from letsgen.exceptions import error_class
 from letsgen.utils.password_util import hash_password
@@ -122,5 +123,22 @@ async def create_user(user: UserForm) -> LetsgenUser:
             await session.flush()
             return letsgen_user
 
+
 # 创建账号
+async def create_account(account: BillAccountForm, by_user_name: str) -> LetsgenBillAccount:
+    letsgen_account = LetsgenBillAccount(
+        account_name=account.account_name,
+        account_status=account.account_status,
+        create_user_name=by_user_name,
+        note=account.note if account.note else "",
+        **{}
+    )
+    db_engine = await pg_connection.async_db_pg_engine()
+    async_session_local = async_sessionmaker(bind=db_engine, class_=AsyncSession, expire_on_commit=False)
+    async with async_session_local() as session:
+        async with session.begin():
+            session.add(letsgen_account)
+            await session.flush()
+            return letsgen_account
+
 # 创建 api-key

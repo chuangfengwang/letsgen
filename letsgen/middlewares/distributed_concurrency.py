@@ -26,8 +26,10 @@ logger = logging.getLogger(__name__)
 
 
 class DistributeCurrencyCounter:
-    HEARTBEAT_KEY_FORMAT = "letsgen-instance:heartbeat:{}"
-    ZSET_KEY_FORMAT = "letsgen-currency:{}"
+    # 心跳key. zset 结构
+    HEARTBEAT_KEY = "letsgen-instance:heartbeat"
+    # in-flight 请求记录 key. zset 结构
+    CURRENCY_KEY_FORMAT = "letsgen-currency:{}"
 
     def __init__(self, redis_conn: AsyncStrictRedis, instance_id: str, instance_ttl: int):
         self.redis_conn = redis_conn
@@ -52,37 +54,41 @@ class DistributeCurrencyCounter:
         except asyncio.CancelledError:
             pass
         logger.info(f"{self.__class__.__name__} closing heartbeat task: {self._heartbeat_task}")
-        # 清除实例
-        key = DistributeCurrencyCounter.HEARTBEAT_KEY_FORMAT.format(self.instance_id)
+        # 清除当前实例心跳
         try:
-            await self.redis_conn.delete(key)
-            logger.info(f"{self.__class__.__name__} deleted heartbeat key: {key}")
+            await self.redis_conn.zrem(DistributeCurrencyCounter.HEARTBEAT_KEY, self.instance_id)
+            logger.info(f"{self.__class__.__name__} deleted heartbeat instance_id: {self.instance_id}")
         except Exception as e:
             logger.error(f"heartbeat delete failed. error=", exc_info=True)
 
     async def heartbeat_loop_run(self):
         """实例心跳维护任务"""
-        key = DistributeCurrencyCounter.HEARTBEAT_KEY_FORMAT.format(self.instance_id)
-        await self.redis_conn.set(key, "1", px=self.instance_ttl)
         while True:
             try:
-                await self.redis_conn.set(key, "1", px=self.instance_ttl)
-                logger.info(f"{self.__class__.__name__} update heartbeat. key: {key}")
+                # 加入/更新时间戳
+                now = time.time()
+                expire_ts = now + self.instance_ttl / 1000.
+                await self.redis_conn.zadd(
+                    DistributeCurrencyCounter.HEARTBEAT_KEY, {self.instance_id: expire_ts})
+                # 删掉旧时间戳
+                now = time.time()
+                await self.redis_conn.zremrangebyscore(
+                    DistributeCurrencyCounter.HEARTBEAT_KEY, "-inf", now)
+                logger.info(f"{self.__class__.__name__} update heartbeat. instance_id: {self.instance_id}")
             except Exception as e:
                 logger.error(f"heartbeat update failed. error=", exc_info=True)
             await asyncio.sleep(max(self.instance_ttl / 1000 / 2 - 0.5, 0))  # 半TTL刷新一次
 
     async def fetch_alive_instances(self) -> Set[str]:
-        """获取当前存活的实例ID列表. notice: 慢操作,慎用. todo: 优化"""
+        """获取当前存活的实例ID列表"""
         alive_instances = set()
-        async for key in self.redis_conn.scan_iter(DistributeCurrencyCounter.HEARTBEAT_KEY_FORMAT.format("*")):
-            ttl = await self.redis_conn.ttl(key)
-            if ttl > 0:
-                alive_instances.add(key.split(":")[-1])  # instance_id
+        now = time.time()
+        instance_list = await self.redis_conn.zrangebyscore(DistributeCurrencyCounter.HEARTBEAT_KEY, now, "+inf")
+        alive_instances.update(instance_list)
         return alive_instances
 
     def _request_zset_key(self, key: str):
-        return DistributeCurrencyCounter.ZSET_KEY_FORMAT.format(key)
+        return DistributeCurrencyCounter.CURRENCY_KEY_FORMAT.format(key)
 
     def _request_zset_member(self, req_id: str):
         return f"{self.instance_id}-{req_id}"
@@ -153,7 +159,7 @@ class DistributeCurrencyCounter:
         """查询所有实例的并发数. notice: 慢操作,慎用"""
         instance_concurrency_dict: Dict[str, int] = dict()
         now = time.time()
-        async for key in self.redis_conn.scan_iter(DistributeCurrencyCounter.ZSET_KEY_FORMAT.format("*")):
+        async for key in self.redis_conn.scan_iter(DistributeCurrencyCounter.CURRENCY_KEY_FORMAT.format("*")):
             members = await self.redis_conn.zrangebyscore(key, now, "+inf")
             for m in members:
                 instance, req_id = self.request_member_parse(m)
