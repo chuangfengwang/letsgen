@@ -12,8 +12,32 @@ from enum import Enum
 from pydantic import BaseModel, Field
 
 
+class UiUserRoleEnum(str, Enum):
+    """Ui user 角色"""
+    # 成员名 = 成员值 (实际的字符串)
+    normal = "normal"
+    admin = "admin"
+
+class UserToAccountRoleEnum(str, Enum):
+    """ui user 对 account 的所有权角色"""
+    normal = "normal"
+    admin = "admin"
+
+class UiUserStatusEnum(str, Enum):
+    """Ui user 状态"""
+    # 成员名 = 成员值 (实际的字符串)
+    ok = "ok"
+    disabled = "disabled"
+
+
 class BillAccountStatusEnum(str, Enum):
     """bill account 状态"""
+    ok = "ok"
+    disabled = "disabled"
+
+
+class ApikeyStatusEnum(str, Enum):
+    """apikey 状态"""
     ok = "ok"
     disabled = "disabled"
 
@@ -21,4 +45,10 @@ class BillAccountStatusEnum(str, Enum):
 class BillAccountForm(BaseModel):
     account_name: str = Field(min_length=2, max_length=50)
     account_status: BillAccountStatusEnum = BillAccountStatusEnum.ok
+    note: str | None = None
+
+
+class ApiKeyForm(BaseModel):
+    account_name: str = Field(min_length=2, max_length=50)
+    apikey_name: str = Field(min_length=2, max_length=50)
     note: str | None = None

@@ -9,6 +9,7 @@ class LetsgenAccountApikey(SQLModel, table=True):
     __table_args__ = (
         PrimaryKeyConstraint('id', name='letsgen_account_apikey_pkey'),
         UniqueConstraint('account_name', 'apikey_name', name='uq_letsgen_account_token'),
+        UniqueConstraint('apikey_value', name='uq_apikey_value'),
         {'comment': '计费账号鉴权 apikey 表'}
     )
 

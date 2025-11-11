@@ -56,6 +56,7 @@ redis_single_url = os.environ.get("REDIS_SINGLE_URL")
 letsgen_db_pg_url = os.environ.get("LETSGEN_DB_PG_URL")
 # 日志数据库配置
 letsgen_log_pg_url = os.environ.get("LETSGEN_LOG_PG_URL")
+letsgen_pg_timezone = os.environ.get("LETSGEN_PG_TIMEZONE", "UTC")
 
 # llm
 # 大模型 api 最大等待时间,单位毫秒

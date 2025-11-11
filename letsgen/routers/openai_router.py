@@ -12,9 +12,9 @@ from typing import cast
 
 from fastapi import APIRouter, Request, Response, Depends, BackgroundTasks
 from fastapi.responses import StreamingResponse
+from sse_starlette import EventSourceResponse
 
 import letsgen.dependencies.auth as auth
-from letsgen.entity.auth_entity import Identity
 from letsgen.entity.llm_entity import LlmRequestContext
 from letsgen.service.llm_api_transfer import LlmTransferService
 from letsgen.service.openai_service import OpenAiService
@@ -23,12 +23,14 @@ router = APIRouter(prefix="/api/openai/v1", tags=["openai"])
 llmTransferService: LlmTransferService = OpenAiService()
 
 
-@router.post("/chat/completions")
+@router.post(
+    "/chat/completions",
+    # dependencies=[Depends(auth.header_authorize_check)]
+)
 async def chat_completions(
     request: Request,
     response: Response,
-    background_tasks: BackgroundTasks,
-    identity: Identity = Depends(auth.header_authorize_check),
+    background_tasks: BackgroundTasks
 ):
     """
     OpenAI Chat Completions API
@@ -37,6 +39,7 @@ async def chat_completions(
     provider_resp = await llmTransferService.run(context)
 
     if context.is_stream:
+        # EventSourceResponse
         return StreamingResponse(
             llmTransferService.stream_generator(provider_resp, request.state.context),
             media_type="text/event-stream",

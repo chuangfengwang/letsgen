@@ -55,6 +55,11 @@ async def async_db_pg_engine() -> AsyncEngine:
         pool_size=1,
         max_overflow=20,
         echo=config.debug_flag,
+        connect_args={
+            "server_settings": {
+                "timezone": config.letsgen_pg_timezone
+            }
+        }
     )
     return db_pg_engine
 
@@ -84,6 +89,11 @@ async def async_log_pg_engine() -> AsyncEngine:
         pool_size=1,
         max_overflow=20,
         echo=config.debug_flag,
+        connect_args={
+            "server_settings": {
+                "timezone": config.letsgen_pg_timezone
+            }
+        }
     )
     return log_pg_engine
 

@@ -89,20 +89,12 @@ app.mount("/metrics", prometheus_router.make_metrics_app(), name="prometheus_met
 # 捕获所有未处理的异常
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    # 安全获取请求体数据
-    body_bytes = None
-    try:
-        if request.method in ("POST", "PUT", "PATCH"):
-            body_bytes = await request.body()
-            json.loads(body_bytes)  # 尝试解析验证
-    except (JSONDecodeError, UnicodeDecodeError):
-        body_bytes = b"<invalid JSON>"
-    except Exception:
-        body_bytes = b"<unreadable body>"
-    logger.error(f"Letsgen error. path: {request.url.path}, method: {request.method}, body_bytes: {body_bytes}",
-                 exc_info=True)
+    """统一异常捕获"""
     context = cast(LlmRequestContext, request.state.context)
     error_info = {"letsgen_req_id": context.letsgen_req_id, "qtraceid": context.trace_id}
+    logger.error(f"Letsgen error. qtraceid: {context.trace_id}, letsgen_req_id: {context.letsgen_req_id}, "
+                 f"path: {request.url.path}, method: {request.method}",
+                 exc_info=True)
     headers = {"X-Request-Id": context.letsgen_req_id, "qtraceid": context.trace_id, }
     if hasattr(exc, "message"):
         error_info["message"] = exc.message

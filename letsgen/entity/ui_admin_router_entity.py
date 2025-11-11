@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import List, Tuple, Dict, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
-from letsgen.entity.ui_common_entity import UiUserRoleEnum, UiUserStatusEnum
+from letsgen.entity.api_common_entity import UiUserRoleEnum, UiUserStatusEnum
 
 
 class FirstAdminUser(BaseModel):

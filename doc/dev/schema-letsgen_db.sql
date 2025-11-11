@@ -3,6 +3,7 @@ CREATE DATABASE letsgen_db
     LC_COLLATE = 'C.UTF-8'
     LC_CTYPE = 'C.UTF-8'
 ;
+ALTER DATABASE letsgen_db SET timezone = 'Asia/Shanghai';
 
 -- 用户表
 create table letsgen_user
@@ -95,8 +96,11 @@ create table letsgen_account_apikey
     create_at     TIMESTAMPTZ  not null default now(),
     update_at     TIMESTAMPTZ  not null default now(),
     PRIMARY KEY (id),
-    CONSTRAINT uq_letsgen_account_token UNIQUE (account_name, apikey_name)
+    CONSTRAINT uq_letsgen_account_token UNIQUE (account_name, apikey_name),
+    CONSTRAINT uq_apikey_value UNIQUE (apikey_value)
 );
+-- ALTER table letsgen_account_apikey
+--     ADD CONSTRAINT uq_apikey_value UNIQUE (apikey_value);
 comment on table letsgen_account_apikey is '计费账号鉴权 apikey 表';
 comment on column letsgen_account_apikey.id is '主键';
 comment on column letsgen_account_apikey.account_name is '计费账号名';

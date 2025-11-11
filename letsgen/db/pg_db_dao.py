@@ -10,12 +10,14 @@ from __future__ import annotations
 import logging
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.sql import text
-from sqlalchemy import select, delete, update, insert, func, and_, or_
+from sqlalchemy import select, delete, update, insert, func, and_, or_, not_
 
 import letsgen.db.pg_connection as pg_connection
 
-from letsgen.db.pg_db_entity_auto import (LetsgenUser, LetsgenBillAccount, )
-from letsgen.entity.api_common_entity import BillAccountForm
+from letsgen.db.pg_db_entity_auto import (LetsgenUser, LetsgenBillAccount, LetsgenAccountApikey,
+                                          LetsgenUserAccountRlt, )
+from letsgen.entity.api_common_entity import BillAccountForm, ApiKeyForm, ApikeyStatusEnum, UiUserRoleEnum, \
+    UserToAccountRoleEnum
 from letsgen.entity.ui_admin_router_entity import UserForm
 from letsgen.exceptions import error_class
 from letsgen.utils.password_util import hash_password
@@ -124,8 +126,8 @@ async def create_user(user: UserForm) -> LetsgenUser:
             return letsgen_user
 
 
-# 创建账号
 async def create_account(account: BillAccountForm, by_user_name: str) -> LetsgenBillAccount:
+    """创建计费账号"""
     letsgen_account = LetsgenBillAccount(
         account_name=account.account_name,
         account_status=account.account_status,
@@ -133,12 +135,64 @@ async def create_account(account: BillAccountForm, by_user_name: str) -> Letsgen
         note=account.note if account.note else "",
         **{}
     )
+    rlt = LetsgenUserAccountRlt(
+        user_name=by_user_name,
+        account_name=account.account_name,
+        role=UserToAccountRoleEnum.admin,
+        **{}
+    )
     db_engine = await pg_connection.async_db_pg_engine()
     async_session_local = async_sessionmaker(bind=db_engine, class_=AsyncSession, expire_on_commit=False)
     async with async_session_local() as session:
         async with session.begin():
             session.add(letsgen_account)
+            session.add(rlt)
             await session.flush()
             return letsgen_account
 
-# 创建 api-key
+
+async def create_apikey(apikey: ApiKeyForm, apikey_value: str) -> LetsgenAccountApikey:
+    """创建 api-key"""
+    letsgen_apikey = LetsgenAccountApikey(
+        account_name=apikey.account_name,
+        apikey_name=apikey.apikey_name,
+        apikey_value=apikey_value,
+        apikey_status=ApikeyStatusEnum.ok,
+        note=apikey.note if apikey.note else "",
+        **{}
+    )
+    db_engine = await pg_connection.async_db_pg_engine()
+    async_session_local = async_sessionmaker(bind=db_engine, class_=AsyncSession, expire_on_commit=False)
+    async with async_session_local() as session:
+        async with session.begin():
+            session.add(letsgen_apikey)
+            await session.flush()
+            return letsgen_apikey
+
+
+async def fetch_role(account_name: str, user_name: str) -> LetsgenUserAccountRlt | None:
+    """检查 user_name 对 account_name 的权限"""
+    db_engine = await pg_connection.async_db_pg_engine()
+    async_session_local = async_sessionmaker(bind=db_engine, class_=AsyncSession, expire_on_commit=False)
+    async with async_session_local() as session:
+        stmt = select(LetsgenUserAccountRlt).where(
+            and_(LetsgenUserAccountRlt.user_name == user_name,
+                 LetsgenUserAccountRlt.account_name == account_name)
+        )
+        result = await session.execute(stmt)
+        role = result.scalar_one_or_none()
+        return role
+
+
+async def fetch_account_by_apikey(apikey_value: str) -> LetsgenAccountApikey | None:
+    """通过 api-key 获取计费账户"""
+    db_engine = await pg_connection.async_db_pg_engine()
+    async_session_local = async_sessionmaker(bind=db_engine, class_=AsyncSession, expire_on_commit=False)
+    async with async_session_local() as session:
+        stmt = select(LetsgenAccountApikey).where(
+            and_(LetsgenAccountApikey.apikey_value == apikey_value,
+                 LetsgenAccountApikey.apikey_status == ApikeyStatusEnum.ok)
+        )
+        result = await session.execute(stmt)
+        apikey = result.scalar_one_or_none()
+        return apikey

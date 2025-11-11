@@ -3,6 +3,7 @@ CREATE DATABASE letsgen_log
     LC_COLLATE = 'C.UTF-8'
     LC_CTYPE = 'C.UTF-8'
 ;
+ALTER DATABASE letsgen_log SET timezone = 'Asia/Shanghai';
 
 -- 调用统计表 llm_api_model_call_stat
 create table llm_api_model_call_stat

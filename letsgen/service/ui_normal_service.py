@@ -14,11 +14,12 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 import letsgen.db.pg_db_dao as pg_db_dao
 import letsgen.exceptions.error_class as error_class
 import letsgen.utils.password_util as password_util
-from letsgen.db.pg_db_entity_auto import LetsgenUser, LetsgenBillAccount
-from letsgen.entity.api_common_entity import BillAccountForm
+from letsgen.db.pg_db_entity_auto import LetsgenUser, LetsgenBillAccount, LetsgenAccountApikey
+from letsgen.entity.api_common_entity import BillAccountForm, ApiKeyForm, UserToAccountRoleEnum
 from letsgen.entity.auth_entity import Identity
 from letsgen.entity.ui_admin_router_entity import UserForm
 from letsgen.entity.ui_normal_router_entity import (LoginEntity, )
+from letsgen.utils import codec_util
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +52,7 @@ class UiNormalService:
             raise error_class.UiAuthorizationError(msg)
         user_name = payload.get("user_name")
         role_list = payload.get("role")
-        identity = Identity(user_name=user_name, roles=role_list)
+        identity = Identity(user_name=user_name, roles=role_list, account_name=None)
         return identity
 
     async def create_user(self, user: UserForm, by_admin: Identity | None = None) -> LetsgenUser:
@@ -82,4 +83,31 @@ class UiNormalService:
         except SQLAlchemyError as e:
             msg = f"Create account error. Please contact system admin."
             logger.error(msg + f" account: {account.account_name}", exc_info=True)
+            raise error_class.UiOpsConfigError(msg)
+
+    async def create_apikey(self, apikey_form: ApiKeyForm, identity: Identity) -> LetsgenAccountApikey:
+        """
+        创建一个 apikey
+        :param apikey_form:
+        :param identity:
+        :return:
+        """
+        # 检查用户对 account_name 有所有权
+        role = await pg_db_dao.fetch_role(apikey_form.account_name, identity.user_name)
+        if role is None or role.role != UserToAccountRoleEnum.admin:
+            msg = "Current user has no permission to create apikey for this bill account."
+            logger.error(msg + f" user_name: {identity.user_name}, account_name: {apikey_form.account_name}")
+            raise error_class.UiAuthorizationError(msg)
+        # 创建 api-key
+        apikey_value = "sk-" + codec_util.gen_uuid_base64()
+        try:
+            letsgen_account = await pg_db_dao.create_apikey(apikey_form, apikey_value)
+            return letsgen_account
+        except IntegrityError as e:
+            msg = f"Conflict with existing data."
+            logger.error(msg + f" apikey_name: {apikey_form.apikey_name}", exc_info=True)
+            raise error_class.UiOpsConfigError(msg)
+        except SQLAlchemyError as e:
+            msg = f"Create apikey error. Please contact system admin."
+            logger.error(msg + f" apikey_name: {apikey_form.apikey_name}", exc_info=True)
             raise error_class.UiOpsConfigError(msg)

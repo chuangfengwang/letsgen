@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends
 
 import letsgen.entity.ui_common_entity as ui_entity
 from letsgen.dependencies import auth
-from letsgen.entity.api_common_entity import BillAccountForm
+from letsgen.entity.api_common_entity import BillAccountForm, ApiKeyForm
 from letsgen.entity.auth_entity import Identity
 from letsgen.entity.ui_admin_router_entity import UserForm
 from letsgen.entity.ui_normal_router_entity import *
@@ -45,12 +45,12 @@ async def login(form: LoginEntity):
 # 获取用户信息
 
 
-# 创建 llm 账户
 @router.post("/create_account")
 async def create_account(
     account: BillAccountForm,
     identity: Identity = Depends(auth.jwt_authorize_check),
 ):
+    """创建 llm 账户"""
     if not identity.user_name:
         msg = "Create account need ui login!"
         logger.error(msg)
@@ -62,6 +62,7 @@ async def create_account(
         data={}
     )
 
+
 # 修改 llm 账户信息
 
 # 删除 llm 账户
@@ -70,5 +71,21 @@ async def create_account(
 
 
 # 创建 api-key
+@router.post("/create_api_key")
+async def create_api_key(
+    apikey: ApiKeyForm,
+    identity: Identity = Depends(auth.jwt_authorize_check),
+):
+    if not identity.user_name:
+        msg = "Create ApiKey need ui login!"
+        logger.error(msg)
+        raise error_class.UiOpsConfigError(msg)
+    letsgen_apikey = await ui_normal_service.create_apikey(apikey, identity)
+    return ui_entity.UiBaseResponse(
+        status=0,
+        message="",
+        data={**letsgen_apikey.model_dump()}
+    )
+# 修改 api-key(名称,描述,状态)
 # 删除 api-key
 # 列出 api-key 信息
