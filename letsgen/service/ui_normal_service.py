@@ -19,7 +19,7 @@ from letsgen.db.pg_db_entity_auto import LetsgenUser, LetsgenBillAccount, Letsge
 from letsgen.entity.api_common_entity import BillAccountForm, ApiKeyForm, UserToAccountRoleEnum, WalletForm
 from letsgen.entity.auth_entity import Identity
 from letsgen.entity.ui_admin_router_entity import UserForm
-from letsgen.entity.ui_normal_router_entity import (LoginEntity, )
+from letsgen.entity.ui_normal_router_entity import LoginEntity
 from letsgen.utils import codec_util
 
 logger = logging.getLogger(__name__)

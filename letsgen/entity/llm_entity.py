@@ -58,7 +58,7 @@ class LlmRequestContext(BaseModel):
     end_chunk: Any | None = None
 
     # 本次次调用 token 用量
-    usage: Dict[str, Any] | None = None
+    usage: Any | None = None
     # 价格信息
     price: Dict[str, Any] | None = None
     # 本次花费
@@ -72,3 +72,10 @@ class LlmRequestContext(BaseModel):
         now = datetime.now()
         self.stage_ts.append((event_name, now))
         return now
+
+    def get_event_dt(self, event_name: str) -> datetime | None:
+        """获取事件时间戳"""
+        for entry in self.stage_ts:
+            if entry[0] == event_name:
+                return entry[1]
+        return None

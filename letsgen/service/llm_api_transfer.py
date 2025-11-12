@@ -43,11 +43,11 @@ class LlmTransferService:
         """转换返回结果"""
         raise NotImplementedError()
 
-    def fetch_price(self, model_id: str) -> dict:
+    async def fetch_price(self, model_id: str) -> dict:
         """获取模型的价格信息"""
         raise NotImplementedError()
 
-    def update_cost(self, context: LlmRequestContext) -> float:
+    async def update_cost(self, context: LlmRequestContext) -> float:
         """更新本次调用的费用"""
         raise NotImplementedError()
 
@@ -58,6 +58,26 @@ class LlmTransferService:
     def stream_generator(self, stream_response, context: LlmRequestContext) -> AsyncIterable[str]:
         """流式响应生成器"""
         raise NotImplementedError()
+
+    def parse_usage(self, context: LlmRequestContext) -> dict:
+        """解析 usage"""
+        raise NotImplementedError()
+
+    async def db_log_request(self, context: LlmRequestContext):
+        """请求记录入库"""
+        raise NotImplementedError()
+
+    async def after_call_backend(self, context: LlmRequestContext):
+        """接口调用完成后的后台任务"""
+        model_id, is_stream = self.parse_model_and_stream(context.origin_body_param)
+        usage = self.parse_usage(context)
+        context.usage = usage
+        context.price = await self.fetch_price(model_id)
+        context.request_cost = await self.update_cost(context)
+        context.mark_event_dt("cost_calculated")
+
+        await self.db_log_request(context)
+        context.mark_event_dt("db_log_end")
 
     async def run(self, context: LlmRequestContext):
         """执行调用流程"""
@@ -95,12 +115,7 @@ class LlmTransferService:
         end_response = self.transfer_response(response)
         context.end_response = end_response
         context.mark_event_dt("transfer_response_end")
-
-        # todo: 异步. 假设 usage 信息在 response 中
-        usage = response.usage if hasattr(response, "usage") else {}
-        context.usage = usage
-        context.price = self.fetch_price(model_id)
-        context.request_cost = self.update_cost(context)
-        context.mark_event_dt("cost_calculated")
-
+        # todo: 异步
+        if not is_stream:
+            await self.after_call_backend(context)
         return end_response

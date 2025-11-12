@@ -44,6 +44,7 @@ async def chat_completions(
         # EventSourceResponse
         return SseChunkStreamingResponse(
             llmTransferService.stream_generator(provider_resp, request.state.context),
+            on_complete=lambda: llmTransferService.after_call_backend(context),
             media_type="text/event-stream",
             headers={
                 "Cache-Control": "no-cache",

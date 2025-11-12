@@ -10,12 +10,16 @@ from __future__ import annotations
 import json
 import logging
 import os
+from datetime import datetime
 from typing import Tuple, Any, Dict, Union, List, AsyncGenerator, cast, AsyncIterable
 
 import httpx
 from openai import AsyncOpenAI, AsyncStream
+from openai.types import CompletionUsage
 from openai.types.chat import ChatCompletionChunk, ChatCompletion
 
+import letsgen.db.pg_log_dao as pg_log_dao
+from letsgen.db.pg_log_entity_auto import LlmApiModelCallStat
 from letsgen.entity.llm_entity import LlmRequestContext
 from letsgen.exceptions import error_class
 from letsgen.service.llm_api_transfer import LlmTransferService
@@ -168,14 +172,14 @@ class OpenAiService(LlmTransferService):
         """转换返回结果"""
         return response
 
-    def fetch_price(self, model_id: str) -> dict:
+    async def fetch_price(self, model_id: str) -> dict:
         """获取模型的价格信息"""
         return {
             "prompt_tokens": 0.001,
             "completion_tokens": 0.002,
         }
 
-    def update_cost(self, usage: dict) -> float:
+    async def update_cost(self, usage: dict) -> float:
         """更新本次调用的费用"""
         return 0.
 
@@ -219,3 +223,57 @@ class OpenAiService(LlmTransferService):
             stream_response,
             context
         )
+
+    def parse_usage(self, context: LlmRequestContext) -> dict:
+        """解析 usage"""
+        if context.is_stream:
+            end_chunk = cast(ChatCompletionChunk, context.end_chunk)
+            usage = end_chunk.usage if hasattr(end_chunk, "usage") and end_chunk.usage is not None else {}
+        else:
+            response = cast(ChatCompletion, context.provider_response)
+            usage = response.usage if hasattr(response, "usage") and response.usage is not None else {}
+        return usage
+
+    async def db_log_request(self, context: LlmRequestContext):
+        """请求记录入库"""
+        try:
+            request_in_dt = context.get_event_dt("request_in")
+            call_time_hour_format = "%Y-%m-%dT%H"
+            call_time_hour = datetime.strptime(request_in_dt.strftime(call_time_hour_format), call_time_hour_format)
+            # todo: 判断调用失败
+            is_failed = context.error is not None
+            usage = cast(CompletionUsage, context.usage)
+
+            if usage:
+                input_token_num = usage.prompt_tokens
+                cached_token_num = 0
+                output_token_num = usage.completion_tokens
+                reason_token_num = 0
+                if usage.prompt_tokens_details:
+                    cached_token_num = usage.prompt_tokens_details.cached_tokens
+                if usage.completion_tokens_details:
+                    reason_token_num = usage.completion_tokens_details.reasoning_tokens
+            else:
+                input_token_num = 0
+                cached_token_num = 0
+                output_token_num = 0
+                reason_token_num = 0
+
+            delta_stat = LlmApiModelCallStat(
+                account_name=context.identity.account_name,
+                model_name=context.model_id,
+                call_time_hour=call_time_hour,
+                period_last_call_at=request_in_dt,
+                call_num=1,
+                failed_call_num=1 if is_failed else 0,
+                input_token_num=input_token_num,
+                cached_token_num=cached_token_num,
+                output_token_num=output_token_num,
+                reason_token_num=reason_token_num,
+                **{}
+            )
+            await pg_log_dao.update_call_stat(delta_stat)
+        except Exception as e:
+            logger.error(f"OpenAiService db_log_request error. "
+                         f"letsgen_req_id: {context.letsgen_req_id}, qtraceid: {context.trace_id}, "
+                         f"context.usage: {context.usage}", exc_info=True)
