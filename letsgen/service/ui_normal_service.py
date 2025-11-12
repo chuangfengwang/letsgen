@@ -11,6 +11,7 @@ import logging
 
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
+import config
 import letsgen.db.pg_db_dao as pg_db_dao
 import letsgen.exceptions.error_class as error_class
 import letsgen.utils.password_util as password_util
@@ -74,7 +75,8 @@ class UiNormalService:
         :return: 创建的账号
         """
         try:
-            letsgen_account = await pg_db_dao.create_account(account, identity.user_name)
+            letsgen_account = await pg_db_dao.create_account(
+                account, identity.user_name, config.default_currency_type_list)
             return letsgen_account
         except IntegrityError as e:
             msg = f"Conflict with existing data."

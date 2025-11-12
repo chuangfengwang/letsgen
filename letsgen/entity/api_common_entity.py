@@ -18,10 +18,12 @@ class UiUserRoleEnum(str, Enum):
     normal = "normal"
     admin = "admin"
 
+
 class UserToAccountRoleEnum(str, Enum):
     """ui user 对 account 的所有权角色"""
     normal = "normal"
     admin = "admin"
+
 
 class UiUserStatusEnum(str, Enum):
     """Ui user 状态"""
@@ -36,10 +38,23 @@ class BillAccountStatusEnum(str, Enum):
     disabled = "disabled"
 
 
+class WalletStatusEnum(str, Enum):
+    """ wallet 状态"""
+    ok = "ok"
+    disabled = "disabled"
+
+
 class ApikeyStatusEnum(str, Enum):
     """apikey 状态"""
     ok = "ok"
     disabled = "disabled"
+
+
+class CurrencyTypeEnum(str, Enum):
+    """货币类型枚举"""
+    CNY = "CNY"
+    USD = "USD"
+    EUR = "EUR"
 
 
 class BillAccountForm(BaseModel):

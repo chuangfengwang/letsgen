@@ -8,16 +8,18 @@
 from __future__ import annotations
 
 import logging
+from decimal import Decimal
+from typing import List
+
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.sql import text
 from sqlalchemy import select, delete, update, insert, func, and_, or_, not_
 
 import letsgen.db.pg_connection as pg_connection
-
-from letsgen.db.pg_db_entity_auto import (LetsgenUser, LetsgenBillAccount, LetsgenAccountApikey,
-                                          LetsgenUserAccountRlt, )
+from letsgen.db.pg_db_entity_auto import LetsgenUser, LetsgenBillAccount, LetsgenAccountApikey, \
+    LetsgenUserAccountRlt, LetsgenWallet
 from letsgen.entity.api_common_entity import BillAccountForm, ApiKeyForm, ApikeyStatusEnum, UiUserRoleEnum, \
-    UserToAccountRoleEnum
+    UserToAccountRoleEnum, WalletStatusEnum
 from letsgen.entity.ui_admin_router_entity import UserForm
 from letsgen.exceptions import error_class
 from letsgen.utils.password_util import hash_password
@@ -126,7 +128,11 @@ async def create_user(user: UserForm) -> LetsgenUser:
             return letsgen_user
 
 
-async def create_account(account: BillAccountForm, by_user_name: str) -> LetsgenBillAccount:
+async def create_account(
+    account: BillAccountForm,
+    by_user_name: str,
+    default_currency_type_list: List[str]
+) -> LetsgenBillAccount:
     """创建计费账号"""
     letsgen_account = LetsgenBillAccount(
         account_name=account.account_name,
@@ -141,12 +147,25 @@ async def create_account(account: BillAccountForm, by_user_name: str) -> Letsgen
         role=UserToAccountRoleEnum.admin,
         **{}
     )
+    wallets = [
+        LetsgenWallet(
+            account_name=account.account_name,
+            currency_type=currency,
+            cur_balance=Decimal("0"),
+            summary_charge=Decimal("0"),
+            wallet_status=WalletStatusEnum.ok,
+            note="",
+            **{}
+        ) for currency in default_currency_type_list
+    ]
     db_engine = await pg_connection.async_db_pg_engine()
     async_session_local = async_sessionmaker(bind=db_engine, class_=AsyncSession, expire_on_commit=False)
     async with async_session_local() as session:
         async with session.begin():
             session.add(letsgen_account)
             session.add(rlt)
+            if wallets:
+                session.add_all(wallets)
             await session.flush()
             return letsgen_account
 

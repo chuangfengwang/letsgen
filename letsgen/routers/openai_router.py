@@ -13,11 +13,13 @@ from typing import cast
 from fastapi import APIRouter, Request, Response, Depends, BackgroundTasks
 from fastapi.responses import StreamingResponse
 from sse_starlette import EventSourceResponse
+from watchfiles import awatch
 
 import letsgen.dependencies.auth as auth
 from letsgen.entity.llm_entity import LlmRequestContext
 from letsgen.service.llm_api_transfer import LlmTransferService
 from letsgen.service.openai_service import OpenAiService
+from utils.chunk_response import SseChunkStreamingResponse
 
 router = APIRouter(prefix="/api/openai/v1", tags=["openai"])
 llmTransferService: LlmTransferService = OpenAiService()
@@ -25,7 +27,7 @@ llmTransferService: LlmTransferService = OpenAiService()
 
 @router.post(
     "/chat/completions",
-    # dependencies=[Depends(auth.header_authorize_check)]
+    dependencies=[Depends(auth.header_authorize_check)]
 )
 async def chat_completions(
     request: Request,
@@ -40,14 +42,14 @@ async def chat_completions(
 
     if context.is_stream:
         # EventSourceResponse
-        return StreamingResponse(
+        return SseChunkStreamingResponse(
             llmTransferService.stream_generator(provider_resp, request.state.context),
             media_type="text/event-stream",
             headers={
-                "X-Request-Id": context.letsgen_req_id,
-                "qtraceid": context.trace_id,
                 "Cache-Control": "no-cache",
                 "Connection": "keep-alive",
+                "X-Request-Id": context.letsgen_req_id,
+                "qtraceid": context.trace_id,
             }
         )
     else:

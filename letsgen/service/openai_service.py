@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 import logging
 import os
-from typing import Tuple, Any, Dict, Union, List, AsyncGenerator, cast
+from typing import Tuple, Any, Dict, Union, List, AsyncGenerator, cast, AsyncIterable
 
 import httpx
 from openai import AsyncOpenAI, AsyncStream
@@ -144,7 +144,10 @@ class OpenAiService(LlmTransferService):
             param["extra_query"] = queries
         if body.get("stream", False):
             # 强制添加 usage 参数
-            extra_body["stream_options"] = {"include_usage": True}
+            if "stream_options" not in param:
+                param["stream_options"] = {"include_usage": True}
+            else:
+                param["stream_options"].update({"include_usage": True})
         return param
 
     async def call_endpoint(
@@ -184,23 +187,35 @@ class OpenAiService(LlmTransferService):
         is_stream = body.get("stream", False)
         return model_id, is_stream
 
-    async def stream_generator(
+    def stream_generator(
         self,
         stream_response,
         context: LlmRequestContext
-    ) -> AsyncGenerator[str, None]:
-        """流式响应生成器"""
-        try:
-            stream_response = cast(AsyncStream[ChatCompletionChunk], stream_response)
-            async for chunk in stream_response:
-                context.end_chunk = chunk
-                yield f"data: {chunk.model_dump_json()}\n\n"
-        except Exception as e:
-            context.error = e
-            error_msg = e.message if hasattr(e, "message") else str(e)
-            msg = {"error": error_msg, "letsgen_req_id": context.letsgen_req_id, "qtraceid": context.trace_id}
-            logger.error(f"OpenAIService stream_generator error: {json.dumps(msg)}", exc_info=True)
-            yield f"event: error\n"
-            yield f"data: {json.dumps(msg)}\n\n"
-        finally:
-            yield "data: [DONE]\n\n"
+    ) -> AsyncIterable[str]:
+        """同步转异步调用"""
+
+        async def _wrapper(
+            stream_response,
+            context: LlmRequestContext
+        ) -> AsyncGenerator[str, None]:
+            """流式响应生成器"""
+            try:
+                stream_response = cast(AsyncStream[ChatCompletionChunk], stream_response)
+                async for chunk in stream_response:
+                    context.end_chunk = chunk
+                    data = chunk.model_dump_json()
+                    yield f"data: {data}\n\n"
+            except Exception as e:
+                context.error = e
+                error_msg = e.message if hasattr(e, "message") else str(e)
+                msg = {"error": error_msg, "letsgen_req_id": context.letsgen_req_id, "qtraceid": context.trace_id}
+                logger.error(f"OpenAiService stream_generator error: {json.dumps(msg)}", exc_info=True)
+                yield f"event: error\n"
+                yield f"data: {json.dumps(msg)}\n\n"
+            finally:
+                yield "data: [DONE]\n\n"
+
+        return _wrapper(
+            stream_response,
+            context
+        )

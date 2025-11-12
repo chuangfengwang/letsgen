@@ -55,7 +55,7 @@ class LlmTransferService:
         """解析 body 中的 model 和 stream 参数"""
         raise NotImplementedError()
 
-    async def stream_generator(self, stream_response, context: LlmRequestContext) -> AsyncIterable[str]:
+    def stream_generator(self, stream_response, context: LlmRequestContext) -> AsyncIterable[str]:
         """流式响应生成器"""
         raise NotImplementedError()
 

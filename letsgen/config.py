@@ -83,3 +83,6 @@ if not letsgen_jwt_secret_key:
     raise ValueError("LETSGEN_JWT_SECRET_KEY is not set")
 letsgen_jwt_algorithm = "HS256"  # JWT 加密算法
 letsgen_jwt_expire_minutes = 60 * 24 * 1  # 默认 JWT 过期时间: 1 天
+
+# 默认创建的钱包币种
+default_currency_type_list = ["CNY", "USD"]

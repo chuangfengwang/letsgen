@@ -11,13 +11,12 @@ import logging
 import time
 from typing import Set, Tuple, Dict
 
-from fastapi import Request, Response
+from fastapi import Request
 from redis.asyncio import StrictRedis as AsyncStrictRedis
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.types import ASGIApp, Scope, Receive, Send
 
 import letsgen.config as config
 import letsgen.db.redis_dao as redis_dao
-import letsgen.middlewares.middleware_util as middleware_util
 import letsgen.service.auth_service as auth_service
 import letsgen.utils.codec_util as codec_util
 from letsgen.exceptions import error_class
@@ -194,8 +193,11 @@ llm_api_account_counter = DistributeCurrencyCounter(
 )
 
 
-class ConcurrencyLimitMiddleware(BaseHTTPMiddleware):
-    """并发中间件"""
+class ConcurrencyLimitMiddleware:
+    """并发中间件（纯 ASGI 实现）"""
+
+    def __init__(self, app: ASGIApp):
+        self.app = app
 
     @classmethod
     async def cls_async_init(cls):
@@ -209,39 +211,92 @@ class ConcurrencyLimitMiddleware(BaseHTTPMiddleware):
     def get_counter(cls) -> DistributeCurrencyCounter:
         return llm_api_account_counter
 
-    async def dispatch(self, request: Request, call_next):
-        if request.url.path not in config.letsgen_llm_api:
-            # 不在监控范围内的路径, 直接执行下一步
-            response: Response = await call_next(request)
-            return response
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
 
-        account = await auth_service.get_account(request)
+        # 检查是否需要并发控制
+        if scope["path"] not in config.letsgen_llm_api:
+            await self.app(scope, receive, send)
+            return
 
+        # 缓存请求体
+        body_chunks = []
+        body_bytes = b""
+
+        async def receive_with_cache():
+            nonlocal body_bytes
+            message = await receive()
+            if message["type"] == "http.request":
+                body_chunk = message.get("body", b"")
+                body_chunks.append(body_chunk)
+                body_bytes += body_chunk
+            return message
+
+        # 创建 Request 对象用于读取
+        cached_request = Request(scope, receive_with_cache)
+
+        # 读取请求体
+        full_body = await cached_request.body()
+
+        # 获取 account
+        account = await auth_service.get_account(cached_request)
+
+        # 获取 model_id
         model_id = ""
-        async with middleware_util.reconsume_json_body(request) as body:
-            # 可能没有 body
-            if body:
-                json_body = json.loads(body.decode("utf-8"))
+        if full_body:
+            try:
+                json_body = json.loads(full_body.decode("utf-8"))
                 model_id = json_body.get("model", "")
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                pass
 
         if not model_id:
-            model_id = request.query_params.get("model", "")
-            # todo: for debug
+            # 从查询参数获取
+            query_string = scope.get("query_string", b"").decode()
+            if query_string:
+                from urllib.parse import parse_qs
+                params = parse_qs(query_string)
+                model_id = params.get("model", [""])[0]
             if not model_id:
                 raise error_class.LlmParamError("can not find model_id")
+
         if not account:
-            account = request.query_params.get("account", "")
-            # todo: for debug
-            if not model_id:
+            # 从查询参数获取
+            query_string = scope.get("query_string", b"").decode()
+            if query_string:
+                from urllib.parse import parse_qs
+                params = parse_qs(query_string)
+                account = params.get("account", [""])[0]
+            if not account:
                 raise error_class.LlmParamError("can not find account")
 
         # 并发控制维度: 账号+模型
         control_key = f"{account}-{model_id}"
 
+        # 创建 replay receive 函数
+        body_sent = False
+        body_index = 0
+
+        async def replay_receive():
+            nonlocal body_sent, body_index
+            if not body_sent:
+                if body_index < len(body_chunks):
+                    chunk = body_chunks[body_index]
+                    body_index += 1
+                    more_body = body_index < len(body_chunks)
+                    return {"type": "http.request", "body": chunk, "more_body": more_body}
+                else:
+                    body_sent = True
+                    return {"type": "http.request", "body": b"", "more_body": False}
+            # 请求体发送完毕后，继续监听断开连接
+            return await receive()
+
+        # 在并发控制上下文中执行
         async with DistributeCurrencyContext(
             counter=llm_api_account_counter,
             key=control_key,
             request_ttl=config.llm_api_max_timeout,
         ):
-            response: Response = await call_next(request)
-            return response
+            await self.app(scope, replay_receive, send)
