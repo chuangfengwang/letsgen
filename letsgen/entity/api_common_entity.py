@@ -7,6 +7,7 @@
 """
 from __future__ import annotations
 
+from decimal import Decimal
 from enum import Enum
 
 from pydantic import BaseModel, Field
@@ -66,4 +67,12 @@ class BillAccountForm(BaseModel):
 class ApiKeyForm(BaseModel):
     account_name: str = Field(min_length=2, max_length=50)
     apikey_name: str = Field(min_length=2, max_length=50)
+    note: str | None = None
+
+
+class WalletForm(BaseModel):
+    account_name: str = Field(min_length=2, max_length=50)
+    currency_type: CurrencyTypeEnum
+    charge_delta: Decimal | None = Field(default=None)
+    wallet_status: WalletStatusEnum = WalletStatusEnum.ok
     note: str | None = None

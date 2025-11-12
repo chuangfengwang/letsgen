@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends
 
 import letsgen.entity.ui_common_entity as ui_entity
 from letsgen.dependencies import auth
-from letsgen.entity.api_common_entity import BillAccountForm, ApiKeyForm
+from letsgen.entity.api_common_entity import BillAccountForm, ApiKeyForm, WalletForm
 from letsgen.entity.auth_entity import Identity
 from letsgen.entity.ui_admin_router_entity import UserForm
 from letsgen.entity.ui_normal_router_entity import *
@@ -89,3 +89,21 @@ async def create_api_key(
 # 修改 api-key(名称,描述,状态)
 # 删除 api-key
 # 列出 api-key 信息
+
+# 创建钱包
+@router.post("/create_wallet")
+async def create_wallet(
+    wallet_form: WalletForm,
+    identity: Identity = Depends(auth.jwt_authorize_check),
+):
+    if not identity.user_name:
+        msg = "Create ApiKey need ui login!"
+        logger.error(msg)
+        raise error_class.UiOpsConfigError(msg)
+    letsgen_apikey = await ui_normal_service.create_wallet(wallet_form, identity)
+    return ui_entity.UiBaseResponse(
+        status=0,
+        message="",
+        data={**letsgen_apikey.model_dump()}
+    )
+# 修改钱包基本信息

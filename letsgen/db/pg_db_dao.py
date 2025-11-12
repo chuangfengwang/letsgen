@@ -19,7 +19,7 @@ import letsgen.db.pg_connection as pg_connection
 from letsgen.db.pg_db_entity_auto import LetsgenUser, LetsgenBillAccount, LetsgenAccountApikey, \
     LetsgenUserAccountRlt, LetsgenWallet
 from letsgen.entity.api_common_entity import BillAccountForm, ApiKeyForm, ApikeyStatusEnum, UiUserRoleEnum, \
-    UserToAccountRoleEnum, WalletStatusEnum
+    UserToAccountRoleEnum, WalletStatusEnum, WalletForm
 from letsgen.entity.ui_admin_router_entity import UserForm
 from letsgen.exceptions import error_class
 from letsgen.utils.password_util import hash_password
@@ -215,3 +215,23 @@ async def fetch_account_by_apikey(apikey_value: str) -> LetsgenAccountApikey | N
         result = await session.execute(stmt)
         apikey = result.scalar_one_or_none()
         return apikey
+
+
+async def create_wallet(wallet_form: WalletForm) -> LetsgenWallet:
+    """创建钱包"""
+    letsgen_wallet = LetsgenWallet(
+        account_name=wallet_form.account_name,
+        currency_type=wallet_form.currency_type,
+        cur_balance=wallet_form.charge_delta if wallet_form.charge_delta else Decimal("0"),
+        summary_charge=wallet_form.charge_delta if wallet_form.charge_delta else Decimal("0"),
+        wallet_status=wallet_form.wallet_status,
+        note=wallet_form.note if wallet_form.note else "",
+        **{}
+    )
+    db_engine = await pg_connection.async_db_pg_engine()
+    async_session_local = async_sessionmaker(bind=db_engine, class_=AsyncSession, expire_on_commit=False)
+    async with async_session_local() as session:
+        async with session.begin():
+            session.add(letsgen_wallet)
+            await session.flush()
+            return letsgen_wallet

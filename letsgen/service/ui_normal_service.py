@@ -16,7 +16,7 @@ import letsgen.db.pg_db_dao as pg_db_dao
 import letsgen.exceptions.error_class as error_class
 import letsgen.utils.password_util as password_util
 from letsgen.db.pg_db_entity_auto import LetsgenUser, LetsgenBillAccount, LetsgenAccountApikey
-from letsgen.entity.api_common_entity import BillAccountForm, ApiKeyForm, UserToAccountRoleEnum
+from letsgen.entity.api_common_entity import BillAccountForm, ApiKeyForm, UserToAccountRoleEnum, WalletForm
 from letsgen.entity.auth_entity import Identity
 from letsgen.entity.ui_admin_router_entity import UserForm
 from letsgen.entity.ui_normal_router_entity import (LoginEntity, )
@@ -87,6 +87,13 @@ class UiNormalService:
             logger.error(msg + f" account: {account.account_name}", exc_info=True)
             raise error_class.UiOpsConfigError(msg)
 
+    async def has_edit_role(self, account_name: str, user_name: str) -> bool:
+        """检查 user_name 对 account_name 是否有修改权限"""
+        role = await pg_db_dao.fetch_role(account_name, user_name)
+        if role is None or role.role != UserToAccountRoleEnum.admin:
+            return False
+        return True
+
     async def create_apikey(self, apikey_form: ApiKeyForm, identity: Identity) -> LetsgenAccountApikey:
         """
         创建一个 apikey
@@ -94,9 +101,8 @@ class UiNormalService:
         :param identity:
         :return:
         """
-        # 检查用户对 account_name 有所有权
-        role = await pg_db_dao.fetch_role(apikey_form.account_name, identity.user_name)
-        if role is None or role.role != UserToAccountRoleEnum.admin:
+        # 检查 user 对 account_name 是否有所有权
+        if not await self.has_edit_role(apikey_form.account_name, identity.user_name):
             msg = "Current user has no permission to create apikey for this bill account."
             logger.error(msg + f" user_name: {identity.user_name}, account_name: {apikey_form.account_name}")
             raise error_class.UiAuthorizationError(msg)
@@ -112,4 +118,24 @@ class UiNormalService:
         except SQLAlchemyError as e:
             msg = f"Create apikey error. Please contact system admin."
             logger.error(msg + f" apikey_name: {apikey_form.apikey_name}", exc_info=True)
+            raise error_class.UiOpsConfigError(msg)
+
+    async def create_wallet(self, wallet_form: WalletForm, identity: Identity):
+        """"创建钱包"""
+        # 检查权限
+        if not await self.has_edit_role(wallet_form.account_name, identity.user_name):
+            msg = "Current user has no permission to create wallet for this bill account."
+            logger.error(msg + f" user_name: {identity.user_name}, account_name: {wallet_form.account_name}")
+            raise error_class.UiAuthorizationError(msg)
+        # 创建钱包
+        try:
+            letsgen_account = await pg_db_dao.create_wallet(wallet_form)
+            return letsgen_account
+        except IntegrityError as e:
+            msg = f"Conflict with existing data."
+            logger.error(msg + f" currency_type: {wallet_form.currency_type}", exc_info=True)
+            raise error_class.UiOpsConfigError(msg)
+        except SQLAlchemyError as e:
+            msg = f"Create apikey error. Please contact system admin."
+            logger.error(msg + f" currency_type: {wallet_form.currency_type}", exc_info=True)
             raise error_class.UiOpsConfigError(msg)
