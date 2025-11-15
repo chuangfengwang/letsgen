@@ -25,6 +25,10 @@ letsgen_web_port = 8000
 letsgen_workers = 1
 timeout_keep_alive = 5
 
+# api doc 配置
+expose_api_doc = True
+use_self_hosted_doc_src = True
+
 # 服务工作目录
 work_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -37,7 +41,8 @@ error_logfile = os.path.join(logs_dir, "error.log")
 data_logfile = os.path.join(logs_dir, "data-warehouse.log")
 
 # UI 静态文件目录
-ui_static_dir = os.path.join(work_dir, "../ui_static")
+fastapi_static_dir = os.path.join(work_dir, "../static-fastapi")
+ui_static_dir = os.path.join(work_dir, "../static-ui")
 
 # prometheus 多进程指标目录
 prometheus_metrics_dir = os.environ.get("PROMETHEUS_MULTIPROC_DIR")

@@ -9,7 +9,7 @@ import os
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import PlainTextResponse, RedirectResponse
 
-router = APIRouter()
+router = APIRouter(tags=["sys"])
 
 
 @router.get("/", response_class=RedirectResponse)

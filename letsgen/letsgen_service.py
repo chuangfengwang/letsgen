@@ -33,6 +33,7 @@ import letsgen.routers.ui_admin_router as ui_admin_router
 import letsgen.routers.ui_normal_router as ui_normal_router
 import letsgen.routers.ui_sys_router as ui_sys_router
 from letsgen.entity.llm_entity import LlmRequestContext
+from letsgen.routers.self_hosted_docs_router import set_self_host_docs
 
 # logging.config.dictConfig(concurrent_log.UVICORN_LOGGING_CONFIG)
 
@@ -58,12 +59,33 @@ async def lifespan(app: FastAPI):
     logger.info("Letsgen service end...")
 
 
-app = FastAPI(
-    title="Letsgen gateway",
-    description="LLM API Gateway",
-    version="0.1.0",
-    lifespan=lifespan
-)
+# 配置 doc 页面是否开启及是否使用共有cdn
+if not config.expose_api_doc:
+    app = FastAPI(
+        title="Letsgen gateway",
+        description="LLM API Gateway",
+        version="0.1.0",
+        lifespan=lifespan,
+        openapi_url=None,
+    )
+elif config.expose_api_doc and config.use_self_hosted_doc_src:
+    app = FastAPI(
+        title="Letsgen gateway",
+        description="LLM API Gateway",
+        version="0.1.0",
+        lifespan=lifespan,
+        docs_url=None,
+        redoc_url=None,
+    )
+else:  # config.expose_api_doc and not config.use_self_hosted_doc_src:
+    app = FastAPI(
+        title="Letsgen gateway",
+        description="LLM API Gateway",
+        version="0.1.0",
+        lifespan=lifespan,
+    )
+if config.expose_api_doc and config.use_self_hosted_doc_src:
+    set_self_host_docs(app)
 
 # 中间件: 最后添加的最先执行
 app.add_middleware(distributed_concurrency.ConcurrencyLimitMiddleware)

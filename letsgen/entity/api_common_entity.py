@@ -51,6 +51,28 @@ class ApikeyStatusEnum(str, Enum):
     disabled = "disabled"
 
 
+class CredentialType(str, Enum):
+    """凭证类型"""
+    apiKey = "apiKey"
+    credentialFile = "credentialFile"
+
+
+class CredentialStatus(str, Enum):
+    """凭证状态"""
+    ok = "ok"
+    disabled = "disabled"
+
+
+class EndpointStatusEnum(str, Enum):
+    """endpoint状态"""
+    ok = "ok"
+    down = "down"
+
+
+class EndpointApiFormatEnum(str, Enum):
+    openai = "openai"
+
+
 class CurrencyTypeEnum(str, Enum):
     """货币类型枚举"""
     CNY = "CNY"

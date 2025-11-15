@@ -9,4 +9,4 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import PlainTextResponse, RedirectResponse
 
-router = APIRouter(prefix="/api/ui/sys")
+router = APIRouter(prefix="/api/ui/sys", tags=["sys"])

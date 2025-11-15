@@ -9,17 +9,16 @@ from __future__ import annotations
 
 from typing import Annotated, cast
 
-from fastapi import HTTPException, Cookie, Header
+from fastapi import HTTPException, Cookie, Header, Depends
 from fastapi import status
 from starlette.requests import Request
 
-from exceptions import error_class
+import letsgen.service.auth_service as auth_service
+import letsgen.service.ui_normal_service as ui_normal_service
+from letsgen.entity.api_common_entity import UiUserRoleEnum
 from letsgen.entity.auth_entity import (LetsgenCookies, LetsgenHeaders, Identity)
 from letsgen.entity.llm_entity import (LlmRequestContext)
-from letsgen.service.ui_normal_service import UiNormalService
-import letsgen.service.auth_service as auth_service
-
-ui_normal_service = UiNormalService()
+from letsgen.exceptions import error_class
 
 
 async def jwt_authorize_check(
@@ -36,6 +35,18 @@ async def jwt_authorize_check(
 
     context = cast(LlmRequestContext, request.state.context)
     context.identity = identity
+    return identity
+
+
+async def admin_authorize_check(
+    identity: Identity = Depends(jwt_authorize_check),
+) -> Identity:
+    """
+    UI 使用的 api cookie 检查: jwt
+    """
+    if UiUserRoleEnum.admin not in identity.roles:
+        msg = f"Permission deny for current user."
+        raise error_class.UiAuthorizationError(msg)
     return identity
 
 

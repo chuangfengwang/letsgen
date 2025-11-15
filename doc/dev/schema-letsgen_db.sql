@@ -265,7 +265,7 @@ create table letsgen_provider_endpoint
     endpoint_proxies   text          not null default '', -- endpoint 使用的代理(多个)
     api_format         varchar(50)   not null default '', -- 接口格式
     endpoint_path_info text          not null default '', -- endpoint path信息. 支持哪些路径,健康检查方式等
-    endpoint_quota     text          not null default '', -- endpoint 容量. rpm/tpm/concurrency
+    endpoint_quota     text          not null default '', -- endpoint 容量. rpm/tpm/ifr
     note               text          not null default '',
     create_at          TIMESTAMPTZ   not null default now(),
     update_at          TIMESTAMPTZ   not null default now(),

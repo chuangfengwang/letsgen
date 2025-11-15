@@ -6,22 +6,20 @@
 # @Time    : 2025-08-21 21:25
 """
 
+import logging
+
 from fastapi import APIRouter, Depends
 
 import letsgen.entity.ui_common_entity as ui_entity
+import letsgen.service.ui_normal_service as ui_normal_service
 from letsgen.dependencies import auth
 from letsgen.entity.api_common_entity import BillAccountForm, ApiKeyForm, WalletForm
 from letsgen.entity.auth_entity import Identity
-from letsgen.entity.ui_admin_router_entity import UserForm
 from letsgen.entity.ui_normal_router_entity import *
 from letsgen.exceptions import error_class
-from letsgen.service.ui_normal_service import UiNormalService
-import logging
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/api/ui/normal")
-
-ui_normal_service = UiNormalService()
+router = APIRouter(prefix="/api/ui/normal", tags=["ui-normal"])
 
 
 # 用户登录
@@ -76,6 +74,7 @@ async def create_api_key(
     apikey: ApiKeyForm,
     identity: Identity = Depends(auth.jwt_authorize_check),
 ):
+    """创建 api-key"""
     if not identity.user_name:
         msg = "Create ApiKey need ui login!"
         logger.error(msg)
@@ -86,6 +85,8 @@ async def create_api_key(
         message="",
         data={**letsgen_apikey.model_dump()}
     )
+
+
 # 修改 api-key(名称,描述,状态)
 # 删除 api-key
 # 列出 api-key 信息
@@ -96,6 +97,7 @@ async def create_wallet(
     wallet_form: WalletForm,
     identity: Identity = Depends(auth.jwt_authorize_check),
 ):
+    """创建钱包"""
     if not identity.user_name:
         msg = "Create ApiKey need ui login!"
         logger.error(msg)

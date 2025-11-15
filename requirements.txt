@@ -38,6 +38,8 @@ uvicorn==0.35.0
 uvloop==0.21.0
 watchfiles==1.1.0
 websockets==15.0.1
+# fastapi static file
+fastapi-cdn-host==0.9.2
 # postgresql
 asyncpg==0.30.0
 SQLAlchemy==2.0.4
