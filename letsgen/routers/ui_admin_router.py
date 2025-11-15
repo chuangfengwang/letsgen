@@ -7,7 +7,6 @@
 """
 
 from fastapi import APIRouter, Depends, Body
-from pydantic import Field
 
 import letsgen.dependencies.auth as auth
 import letsgen.entity.ui_common_entity as ui_entity

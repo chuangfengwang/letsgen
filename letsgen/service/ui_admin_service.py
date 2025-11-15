@@ -12,6 +12,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 import letsgen.db.pg_db_dao as pg_db_dao
 import letsgen.exceptions.error_class as error_class
+import letsgen.utils.password_util as password_util
 from entity.auth_entity import Identity
 from letsgen.db.pg_db_entity_auto import (LetsgenUser, LetsgenProviderCredential, LetsgenProviderEndpoint, )
 from letsgen.entity.ui_admin_router_entity import FirstAdminUser, CredentialForm, EndpointForm
@@ -55,11 +56,13 @@ async def create_credential(
     by_admin: Identity
 ) -> LetsgenProviderCredential:
     """创建凭证"""
+    # 加密凭证进行存储
+    encrypt_credential = password_util.encrypt_aes(credential_form.credential_value)
     letsgen_credential = LetsgenProviderCredential(
         provider_name=credential_form.provider_name,
         credential_name=credential_form.credential_name,
         credential_type=credential_form.credential_type,
-        credential_value=credential_form.credential_value,
+        credential_value=encrypt_credential,
         credential_status=credential_form.credential_status,
         create_user=by_admin.user_name,
         **{}
