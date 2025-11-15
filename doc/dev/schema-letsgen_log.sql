@@ -28,6 +28,7 @@ create table llm_api_model_call_stat
         timescaledb.hypertable,
         timescaledb.partition_column = 'call_time_hour',
         timescaledb.segmentby = 'account_name, model_name',
+        timescaledb.chunk_interval='1 days',
         timescaledb.compress = true
         );
 create index idx_llm_api_model_call_stat_account_name ON llm_api_model_call_stat (account_name);
@@ -76,6 +77,7 @@ CREATE TABLE llm_api_request_meta_log
         timescaledb.hypertable,
         timescaledb.partition_column = 'log_time',
         timescaledb.segmentby = 'account_name,model_name',
+        timescaledb.chunk_interval='1 days',
         timescaledb.compress = true
         );
 COMMENT ON TABLE llm_api_request_meta_log IS 'llm请求元信息表,只含参数不含prompt和reply';
@@ -114,6 +116,7 @@ CREATE TABLE llm_api_request_body_log
         timescaledb.hypertable,
         timescaledb.partition_column = 'log_time',
         timescaledb.segmentby = 'account_name,model_name',
+        timescaledb.chunk_interval='1 days',
         timescaledb.compress = true
         );
 COMMENT ON TABLE llm_api_request_body_log IS 'llm请求体信息,只含请求体大文本不含控制参数';

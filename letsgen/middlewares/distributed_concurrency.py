@@ -185,7 +185,7 @@ class DistributeCurrencyContext:
         await self.counter.leave_request(key=self.key, req_id=self.letsgen_req_id)
 
 
-# 进程级全局计数器
+# 分布式全局计数器
 llm_api_account_counter = DistributeCurrencyCounter(
     redis_conn=redis_dao.get_async_redis_conn(),
     instance_id=codec_util.gen_uuid_base64(),
@@ -252,6 +252,7 @@ class ConcurrencyLimitMiddleware:
             except (json.JSONDecodeError, UnicodeDecodeError):
                 pass
 
+        # todo: only for debug
         if not model_id:
             # 从查询参数获取
             query_string = scope.get("query_string", b"").decode()

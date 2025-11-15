@@ -149,7 +149,7 @@ create table letsgen_model
     support_tools      smallint           not null default 0,            -- 是否支持工具调用
     support_non_stream smallint           not null default 1,            -- 是否支持非流式响应
     support_stream     smallint           not null default 1,            -- 是否支持流式响应
-    supports_reasoning smallint           not null default 0,            -- 是否支持推理
+    support_reasoning  smallint           not null default 0,            -- 是否支持推理
     input_modalities   varchar(100)       not null default '',           -- 支持的输入模态: text, image, audio, video
     output_modalities  varchar(100)       not null default '',           -- 支持的输出模态: text, image, audio, video
     model_version      varchar(20)        not null default '',           -- 模型版本
@@ -173,7 +173,7 @@ comment on column letsgen_model.provider is '接入厂商';
 comment on column letsgen_model.support_tools is '是否支持工具调用,0:不支持,1:支持';
 comment on column letsgen_model.support_non_stream is '是否支持非流式响应,0:不支持,1:支持';
 comment on column letsgen_model.support_stream is '是否支持流式响应,0:不支持,1:支持';
-comment on column letsgen_model.supports_reasoning is '是否支持推理,0:不支持,1:支持';
+comment on column letsgen_model.support_reasoning is '是否支持推理,0:不支持,1:支持';
 comment on column letsgen_model.input_modalities is '支持的输入模态: text, image, audio, video';
 comment on column letsgen_model.output_modalities is '支持的输出模态: text, image, audio, video';
 comment on column letsgen_model.model_version is '模型版本';
@@ -272,36 +272,52 @@ create table letsgen_provider_endpoint
     PRIMARY KEY (id),
     CONSTRAINT uq_letsgen_provider_endpoint UNIQUE (provider_name, endpoint_name)
 );
+comment on table letsgen_provider_endpoint is '厂商接入点表';
+comment on column letsgen_provider_endpoint.id is '主键';
+comment on column letsgen_provider_endpoint.provider_name is '接入厂商名';
+comment on column letsgen_provider_endpoint.endpoint_name is 'endpoint 名称';
+comment on column letsgen_provider_endpoint.credential_name1 is '接入点使用的凭证名称1';
+comment on column letsgen_provider_endpoint.credential_name2 is '接入点使用的凭证名称2';
+comment on column letsgen_provider_endpoint.endpoint_status is 'endpoint 状态: ok, down';
+comment on column letsgen_provider_endpoint.endpoint_baseurl is 'endpoint 基础路径';
+comment on column letsgen_provider_endpoint.endpoint_region is 'endpoint 区域代号';
+comment on column letsgen_provider_endpoint.endpoint_proxies is 'endpoint 使用的代理(多个)';
+comment on column letsgen_provider_endpoint.api_format is '接口格式';
+comment on column letsgen_provider_endpoint.endpoint_path_info is 'endpoint path信息. 支持哪些路径,健康检查方式等';
+comment on column letsgen_provider_endpoint.endpoint_quota is 'endpoint 容量. rpm/tpm/ifr';
+comment on column letsgen_provider_endpoint.note is '接入点备注';
+comment on column letsgen_provider_endpoint.create_at is '创建时间';
+comment on column letsgen_provider_endpoint.update_at is '更新时间';
 
--- 模型-接入点表 letsgen_model_endpoint
-create table letsgen_model_endpoint
+-- 模型-接入点关系表 letsgen_model_endpoint_rlt
+create table letsgen_model_endpoint_rlt
 (
-    id               BIGSERIAL   not null,
-    model_name       varchar(50) not null default '', -- 模型名称
-    provider_name    varchar(50) not null default '', -- 接入厂商名
-    endpoint_name    varchar(50) not null default '', -- endpoint 名称
-    rpd_limit        integer     not null default -1, -- 周期内请求数限制-请求次数
-    rpd_duration     integer     not null default 60, -- 周期内请求数限制-时间周期,单位:秒
-    tpd_limit        integer     not null default -1, -- 周期内 token 数限制 - token 数
-    tpd_duration     integer     not null default 60, -- 周期内 token 数限制 - 时间周期,单位:秒
-    concurrent_limit integer     not null default -1, -- 并发请求数限制
-    create_at        TIMESTAMPTZ not null default now(),
-    update_at        TIMESTAMPTZ not null default now(),
+    id            BIGSERIAL   not null,
+    model_name    varchar(50) not null default '', -- 模型名称
+    provider_name varchar(50) not null default '', -- 接入厂商名
+    endpoint_name varchar(50) not null default '', -- endpoint 名称
+    rpd_limit     integer     not null default -1, -- 周期内请求数限制-请求次数
+    rpd_duration  integer     not null default 60, -- 周期内请求数限制-时间周期,单位:秒
+    tpd_limit     integer     not null default -1, -- 周期内 token 数限制 - token 数
+    tpd_duration  integer     not null default 60, -- 周期内 token 数限制 - 时间周期,单位:秒
+    ifr_limit     integer     not null default -1, -- 并发请求数(in-flight request)限制
+    create_at     TIMESTAMPTZ not null default now(),
+    update_at     TIMESTAMPTZ not null default now(),
     PRIMARY KEY (id),
     CONSTRAINT uq_letsgen_model_endpoint UNIQUE (model_name, provider_name, endpoint_name)
 );
-comment on table letsgen_model_endpoint is '模型-接入点表';
-comment on column letsgen_model_endpoint.id is '主键';
-comment on column letsgen_model_endpoint.model_name is '模型名称';
-comment on column letsgen_model_endpoint.provider_name is '接入厂商名';
-comment on column letsgen_model_endpoint.endpoint_name is 'endpoint 名称';
-comment on column letsgen_model_endpoint.rpd_limit is '周期内请求数限制-请求次数';
-comment on column letsgen_model_endpoint.rpd_duration is '周期内请求数限制-时间周期,单位:秒';
-comment on column letsgen_model_endpoint.tpd_limit is '周期内 token 数限制 - token 数';
-comment on column letsgen_model_endpoint.tpd_duration is '周期内 token 数限制 - 时间周期,单位:秒';
-comment on column letsgen_model_endpoint.concurrent_limit is '并发请求数限制';
-comment on column letsgen_model_endpoint.create_at is '创建时间';
-comment on column letsgen_model_endpoint.update_at is '更新时间';
+comment on table letsgen_model_endpoint_rlt is '模型-接入点表';
+comment on column letsgen_model_endpoint_rlt.id is '主键';
+comment on column letsgen_model_endpoint_rlt.model_name is '模型名称';
+comment on column letsgen_model_endpoint_rlt.provider_name is '接入厂商名';
+comment on column letsgen_model_endpoint_rlt.endpoint_name is 'endpoint 名称';
+comment on column letsgen_model_endpoint_rlt.rpd_limit is '周期内请求数限制-请求次数';
+comment on column letsgen_model_endpoint_rlt.rpd_duration is '周期内请求数限制-时间周期,单位:秒';
+comment on column letsgen_model_endpoint_rlt.tpd_limit is '周期内 token 数限制 - token 数';
+comment on column letsgen_model_endpoint_rlt.tpd_duration is '周期内 token 数限制 - 时间周期,单位:秒';
+comment on column letsgen_model_endpoint_rlt.ifr_limit is '并发请求数(in-flight request)限制';
+comment on column letsgen_model_endpoint_rlt.create_at is '创建时间';
+comment on column letsgen_model_endpoint_rlt.update_at is '更新时间';
 
 -- 用户(n)-(n)计费账号(1)-(n)ApiKey
 -- 账号(1)-(n)钱包, 每个币种一个钱包

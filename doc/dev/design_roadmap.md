@@ -1,12 +1,12 @@
 # 功能
 
 接口功能能力
-- [ ] openai 兼容接口接入/调用
-- [ ] 账号鉴权(bear token)
+- [x] openai 兼容接口接入/调用
+- [x] 账号鉴权(bearer token)
 - [ ] 为每个厂商配置代理
 - [ ] 账号计费
-- [ ] 调用限流: rpm/tpm/concurrent
-- [ ] 小时级用量统计
+- [ ] 调用限流: rpm/tpm/ifr
+- [x] 小时级用量统计
 - [ ] 调用日志
 - [ ] 系统级模型监控
 - [ ] 接口转换
@@ -71,6 +71,14 @@ apikey 加密存储, 可搜索, 搜索时先加密再搜索
 
 各国法定货币代号 https://www.iban.hk/currency-codes
 
+### 日志与 trace 能力
+
+记录多个id以提供不同维度的追踪
+1. req_id: letsgen 的每次请求生成一个
+2. provider_req_id: 厂商(或推理引擎)生成的请求id
+3. trace_id: 前缀逐段式, 提供上下游调用串联能力
+4. session_id: 提供会话级聚合能力
+5. project_id: 提供项目级聚合能力
 
 # 监控
 活跃用户数: 做不到
@@ -83,58 +91,5 @@ apikey 加密存储, 可搜索, 搜索时先加密再搜索
 
 concurrent-log-handler: 解决多 worker 日志冲突问题
 uvloop + uvicorn: 替换默认 asyncio 事件循环
-gunicorn: 解决多 worker 保活问题
-
-gunicorn 守护的多进程, 及N次请求后重启参数
-```bash
-gunicorn myapp:app \
--k uvicorn.workers.UvicornWorker \
--w 2 \
---pid /tmp/gunicorn.pid \
---preload \
---graceful-timeout 30 \
---max-requests 10000 \
---max-requests-jitter 1000
-
-kill $(cat /tmp/gunicorn.pid)
-
-gunicorn -c gunicorn_config.py myapp:app
-
-
-sudo systemctl daemon-reload
-sudo systemctl enable gunicorn_letsgen.service
-sudo systemctl start gunicorn_letsgen.service
-sudo systemctl stop gunicorn_letsgen.service
-```
-
-
-多进程 prometheus client 指标暴露方案
-```python
-from prometheus_client import multiprocess
-from prometheus_client import generate_latest, CollectorRegistry, CONTENT_TYPE_LATEST, Counter
-
-
-@app.get("/metrics")
-def metrics():
-    registry = CollectorRegistry()
-    multiprocess.MultiProcessCollector(registry)
-    data = generate_latest(registry)
-    return Response(content=data, media_type="text/plain")
-
-
-# 对于 gunicorn, 需要配置中增加
-from prometheus_client import multiprocess
-
-
-def child_exit(server, worker):
-    multiprocess.mark_process_dead(worker.pid)
-```
-
-
-```bash
-# export PYTHONDONTWRITEBYTECODE=1
-export PYTHONUNBUFFERED=1
-
-CMD ["uvicorn", "app.main:app", "--proxy-headers", "--host", "0.0.0.0", "--port", "80"]
-```
+gunicorn: 解决多 worker 保活问题(不用, uvicorn本身已具备这一能力)
 
