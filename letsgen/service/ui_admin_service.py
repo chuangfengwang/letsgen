@@ -6,6 +6,9 @@
 # @Time    : 2025-11-01 22:45
 """
 import logging
+from typing import List
+
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 import letsgen.db.pg_db_dao as pg_db_dao
 import letsgen.exceptions.error_class as error_class
@@ -63,16 +66,54 @@ async def create_credential(
     )
     if credential_form.expire_at:
         letsgen_credential.expire_at = credential_form.expire_at
-    letsgen_credential = await pg_db_dao.create_credential(letsgen_credential)
+    try:
+        letsgen_credential = await pg_db_dao.create_credential(letsgen_credential)
+    except IntegrityError as e:
+        msg = f"Conflict with existing data."
+        logger.error(msg + f" provider_name: {credential_form.provider_name},"
+                           f" credential_name: {credential_form.credential_name}",
+                     exc_info=True)
+        raise error_class.UiOpsConfigError(msg)
+    except SQLAlchemyError as e:
+        msg = f"Create credential error. Please contact system admin."
+        logger.error(msg + f" provider_name: {credential_form.provider_name},"
+                           f" credential_name: {credential_form.credential_name}",
+                     exc_info=True)
+        raise error_class.UiOpsConfigError(msg)
     if not letsgen_credential:
-        msg = (f"Create credential failed. provider_name:{credential_form.provider_name}, "
+        msg = (f"Create credential failed. provider_name: {credential_form.provider_name}, "
                f"credential_name: {credential_form.credential_name}")
         raise error_class.UiOpsConfigError(msg)
     return letsgen_credential
 
 
+async def query_valid_credential(provider_name: str) -> List[str]:
+    """查询有效凭证"""
+    valid_credential_list = await pg_db_dao.query_valid_credential(provider_name)
+    return valid_credential_list
+
+
 async def create_endpoint(endpoint_form: EndpointForm):
     # todo: check endpoint_proxies, endpoint_path_info, endpoint_quota
+    # 检查 credential_name 是否有效
+    valid_credential_list = await pg_db_dao.query_valid_credential(endpoint_form.provider_name)
+    if not valid_credential_list:
+        msg = f"Provider has no valid credential."
+        logger.error(msg + f" provider_name: {endpoint_form.provider_name}", exc_info=True)
+        raise error_class.UiOpsConfigError(msg)
+    if endpoint_form.credential_name1 and endpoint_form.credential_name1 not in valid_credential_list:
+        msg = f"Credential1 has not register."
+        logger.error(msg + f" provider_name: {endpoint_form.provider_name}, "
+                           f"credential_name1: {endpoint_form.credential_name1}",
+                     exc_info=True)
+        raise error_class.UiOpsConfigError(msg)
+    if endpoint_form.credential_name2 and endpoint_form.credential_name1 not in valid_credential_list:
+        msg = f"Credential2 has not register."
+        logger.error(msg + f" provider_name: {endpoint_form.provider_name}, "
+                           f"credential_name2: {endpoint_form.credential_name2}",
+                     exc_info=True)
+        raise error_class.UiOpsConfigError(msg)
+    # 创建有效 endpoint
     letsgen_provider_endpoint = LetsgenProviderEndpoint(
         provider_name=endpoint_form.provider_name,
         endpoint_name=endpoint_form.endpoint_name,
@@ -88,9 +129,24 @@ async def create_endpoint(endpoint_form: EndpointForm):
         note=endpoint_form.note,
         **{}
     )
-    letsgen_credential = await pg_db_dao.create_endpoint(letsgen_provider_endpoint)
-    if not letsgen_credential:
-        msg = (f"Create provider endpoint failed. provider_name:{endpoint_form.provider_name}, "
-               f"endpoint_name: {endpoint_form.endpoint_name}")
+
+    try:
+        letsgen_credential = await pg_db_dao.create_endpoint(letsgen_provider_endpoint)
+    except IntegrityError as e:
+        msg = f"Conflict with existing data."
+        logger.error(msg + f" provider_name: {endpoint_form.provider_name},"
+                           f" endpoint_name: {endpoint_form.endpoint_name}",
+                     exc_info=True)
         raise error_class.UiOpsConfigError(msg)
+    except SQLAlchemyError as e:
+        msg = f"Create provider endpoint error. Please contact system admin."
+        logger.error(msg + f" provider_name: {endpoint_form.provider_name},"
+                           f" endpoint_name: {endpoint_form.endpoint_name}",
+                     exc_info=True)
+        raise error_class.UiOpsConfigError(msg)
+    if not letsgen_credential:
+        if not letsgen_credential:
+            msg = (f"Create provider endpoint failed. provider_name: {endpoint_form.provider_name}, "
+                   f"endpoint_name: {endpoint_form.endpoint_name}")
+            raise error_class.UiOpsConfigError(msg)
     return letsgen_credential

@@ -247,6 +247,18 @@ async def create_credential(letsgen_credential: LetsgenProviderCredential) -> Le
             await session.flush()
             return letsgen_credential
 
+async def query_valid_credential(provider:str)-> List[str]:
+    """查询 provider 的有效凭证"""
+    db_engine = await pg_connection.async_db_pg_engine()
+    async_session_local = async_sessionmaker(bind=db_engine, class_=AsyncSession, expire_on_commit=False)
+    async with async_session_local() as session:
+        sql_query = text(
+            "SELECT credential_name FROM letsgen_provider_credential "
+            "WHERE provider_name = :provider_name and credential_status = 'ok' and expire_at > now()")
+        result = await session.execute(sql_query, {"provider_name": provider})
+        valid_credential_list = list(result.scalars().all())
+        return valid_credential_list
+
 
 async def create_endpoint(letsgen_provider_endpoint: LetsgenProviderEndpoint) -> LetsgenProviderEndpoint | None:
     """创建 endpoint"""

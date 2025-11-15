@@ -53,7 +53,7 @@ class EndpointForm(BaseModel):
     credential_name2: str | None = Field(min_length=2, max_length=50)
     endpoint_status: EndpointStatusEnum = EndpointStatusEnum.ok
     endpoint_baseurl: str = Field(min_length=7, max_length=1024)
-    endpoint_region: str = Field(min_length=2, max_length=50, default="")
+    endpoint_region: str | None = Field(min_length=2, max_length=50)
     endpoint_proxies: str = ""
     api_format: EndpointApiFormatEnum = EndpointApiFormatEnum.openai
     endpoint_path_info: str = ""

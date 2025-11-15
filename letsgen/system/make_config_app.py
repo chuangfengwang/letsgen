@@ -48,7 +48,7 @@ def set_self_host_docs(app: FastAPI):
             redoc_js_url="/static/swagger-ui-dist@5/redoc.standalone.js",
         )
 
-    # fastapi_cdn_host.patch_docs(app)
+    # fastapi_cdn_host.patch_docs(app)  # 弃用
     app.mount("/static", StaticFiles(directory=config.fastapi_static_dir), name="fastapi-static")
 
 

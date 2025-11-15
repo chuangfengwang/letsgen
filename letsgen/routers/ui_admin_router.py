@@ -6,7 +6,8 @@
 # @Time    : 2025-08-21 21:25
 """
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Body
+from pydantic import Field
 
 import letsgen.dependencies.auth as auth
 import letsgen.entity.ui_common_entity as ui_entity
@@ -41,6 +42,20 @@ async def create_credential(
         status=0,
         message="",
         data={}
+    )
+
+
+@router.post("/query_valid_credential")
+async def query_valid_credential(
+    provider: str = Body(..., min_length=1, max_length=50, embed=True),
+    identity: Identity = Depends(auth.admin_authorize_check),
+):
+    """创建 endpoint 凭证"""
+    credential_list = await ui_admin_service.query_valid_credential(provider_name=provider)
+    return ui_entity.UiBaseResponse(
+        status=0,
+        message="",
+        data={"credential_list": credential_list}
     )
 
 
