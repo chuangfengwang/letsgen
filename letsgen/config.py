@@ -20,6 +20,11 @@ load_dotenv()
 # 调试标记
 debug_flag = os.environ.get("LETSGEN_DEBUG_FLAG", "false").lower() == "true"
 
+# 服务名称与版本
+app_title = "Letsgen Gateway",
+app_description = "LLM API Gateway",
+app_service_version = "0.1.0",
+
 # API服务端口
 letsgen_web_port = 8000
 letsgen_workers = 1

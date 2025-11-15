@@ -6,22 +6,12 @@
 # @Author  : chuangfeng.wang
 # @Time    : 2025-08-21 20:30
 """
-import json
 import logging.config
 import os
-from contextlib import asynccontextmanager
-from json import JSONDecodeError
-from typing import cast
 
-from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from starlette import status
-from starlette.requests import Request
-from starlette.responses import JSONResponse
 
 import letsgen.config as config
-import letsgen.db.pg_connection as db_pg_connection
-import letsgen.exceptions.error_class as error_class
 import letsgen.log.concurrent_log as concurrent_log
 import letsgen.middlewares.distributed_concurrency as distributed_concurrency
 import letsgen.middlewares.e2e_tracelog_middleware as e2e_tracelog_middleware
@@ -32,60 +22,16 @@ import letsgen.routers.sys_router as sys_router
 import letsgen.routers.ui_admin_router as ui_admin_router
 import letsgen.routers.ui_normal_router as ui_normal_router
 import letsgen.routers.ui_sys_router as ui_sys_router
-from letsgen.entity.llm_entity import LlmRequestContext
-from letsgen.routers.self_hosted_docs_router import set_self_host_docs
+from system.exception_handler import add_global_exception_handler
+from system.make_config_app import make_app
 
 # logging.config.dictConfig(concurrent_log.UVICORN_LOGGING_CONFIG)
 
 logger = logging.getLogger(__name__)
 dw_logger = logging.getLogger("data-warehouse")
 
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """应用生命周期管理"""
-    logger.info("Letsgen service start...")
-    dw_logger.info("data warehouse log info...")
-
-    # 向 redis 发送心跳信号任务启动
-    await distributed_concurrency.ConcurrencyLimitMiddleware.cls_async_init()
-
-    yield
-
-    # 向 redis 发送心跳信号任务停止
-    await distributed_concurrency.ConcurrencyLimitMiddleware.cls_async_close()
-    await db_pg_connection.close_pg_pool()
-
-    logger.info("Letsgen service end...")
-
-
-# 配置 doc 页面是否开启及是否使用共有cdn
-if not config.expose_api_doc:
-    app = FastAPI(
-        title="Letsgen gateway",
-        description="LLM API Gateway",
-        version="0.1.0",
-        lifespan=lifespan,
-        openapi_url=None,
-    )
-elif config.expose_api_doc and config.use_self_hosted_doc_src:
-    app = FastAPI(
-        title="Letsgen gateway",
-        description="LLM API Gateway",
-        version="0.1.0",
-        lifespan=lifespan,
-        docs_url=None,
-        redoc_url=None,
-    )
-else:  # config.expose_api_doc and not config.use_self_hosted_doc_src:
-    app = FastAPI(
-        title="Letsgen gateway",
-        description="LLM API Gateway",
-        version="0.1.0",
-        lifespan=lifespan,
-    )
-if config.expose_api_doc and config.use_self_hosted_doc_src:
-    set_self_host_docs(app)
+# 生成经过配置的 app
+app = make_app()
 
 # 中间件: 最后添加的最先执行
 app.add_middleware(distributed_concurrency.ConcurrencyLimitMiddleware)
@@ -107,36 +53,8 @@ app.mount("/ui", StaticFiles(directory=config.ui_static_dir), name="ui_static")
 # prometheus 监控端点
 app.mount("/metrics", prometheus_router.make_metrics_app(), name="prometheus_metrics")
 
-
-# 捕获所有未处理的异常
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    """统一异常捕获"""
-    context = cast(LlmRequestContext, request.state.context)
-    error_info = {"letsgen_req_id": context.letsgen_req_id, "qtraceid": context.trace_id}
-    logger.error(f"Letsgen error. qtraceid: {context.trace_id}, letsgen_req_id: {context.letsgen_req_id}, "
-                 f"path: {request.url.path}, method: {request.method}",
-                 exc_info=True)
-    headers = {"X-Request-Id": context.letsgen_req_id, "qtraceid": context.trace_id, }
-    if hasattr(exc, "message"):
-        error_info["message"] = exc.message
-    else:
-        message = f'Letsgen service error'
-        error_info["message"] = message
-    # 响应码
-    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-    if isinstance(exc, (error_class.UiAuthorizationError, error_class.LlmAuthorizationError)):
-        status_code = status.HTTP_401_UNAUTHORIZED
-    elif isinstance(exc, (error_class.UiParamError, error_class.LlmParamError)):
-        status_code = status.HTTP_400_BAD_REQUEST
-    elif isinstance(exc, (error_class.ProviderRateLimitError,)):
-        status_code = status.HTTP_429_TOO_MANY_REQUESTS
-    return JSONResponse(
-        content={"error": error_info},
-        headers=headers,
-        status_code=status_code,
-    )
-
+# 添加全局异常处理
+add_global_exception_handler(app)
 
 if __name__ == '__main__':
     import uvicorn

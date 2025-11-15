@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 # @File    : self_hosted_docs_router.py
-# @Desc    : 
+# @Desc    : 生成进过配置的 app
 # @Author  : chuangfeng.wang
 # @Time    : 2025-11-15 21:55
 """
-import fastapi_cdn_host
+
 from fastapi import FastAPI
 from fastapi.openapi.docs import (
     get_redoc_html,
@@ -14,7 +14,8 @@ from fastapi.openapi.docs import (
 )
 from fastapi.staticfiles import StaticFiles
 
-import config
+import letsgen.config as config
+from letsgen.system.app_lifespan import lifespan
 
 
 def set_self_host_docs(app: FastAPI):
@@ -49,3 +50,35 @@ def set_self_host_docs(app: FastAPI):
 
     # fastapi_cdn_host.patch_docs(app)
     app.mount("/static", StaticFiles(directory=config.fastapi_static_dir), name="fastapi-static")
+
+
+def make_app():
+    # 配置 doc 页面是否开启及是否使用共有cdn
+    if not config.expose_api_doc:
+        app = FastAPI(
+            title=config.app_title,
+            description=config.app_description,
+            version=config.app_service_version,
+            lifespan=lifespan,
+            openapi_url=None,
+        )
+    elif config.expose_api_doc and config.use_self_hosted_doc_src:
+        app = FastAPI(
+            title=config.app_title,
+            description=config.app_description,
+            version=config.app_service_version,
+            lifespan=lifespan,
+            docs_url=None,
+            redoc_url=None,
+        )
+    else:  # config.expose_api_doc and not config.use_self_hosted_doc_src:
+        app = FastAPI(
+            title=config.app_title,
+            description=config.app_description,
+            version=config.app_service_version,
+            lifespan=lifespan,
+        )
+    # 配置 self host doc resource
+    if config.expose_api_doc and config.use_self_hosted_doc_src:
+        set_self_host_docs(app)
+    return app
