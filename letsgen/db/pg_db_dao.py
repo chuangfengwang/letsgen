@@ -206,6 +206,10 @@ async def fetch_role(account_name: str, user_name: str) -> LetsgenUserAccountRlt
         return role
 
 
+fetch_account_by_apikey_lru_cache = TTLCache(maxsize=1000, ttl=60., timer=time.monotonic)
+
+
+@acached(cache=fetch_account_by_apikey_lru_cache)
 async def fetch_account_by_apikey(apikey_value: str) -> LetsgenAccountApikey | None:
     """通过 api-key 获取计费账户"""
     db_engine = await pg_connection.async_db_pg_engine()
