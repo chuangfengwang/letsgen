@@ -296,11 +296,13 @@ create table letsgen_model_endpoint_rlt
     model_name    varchar(50) not null default '', -- 模型名称
     provider_name varchar(50) not null default '', -- 接入厂商名
     endpoint_name varchar(50) not null default '', -- endpoint 名称
+    m_edp_status  varchar(10) not null default '', -- 是否对该摸清启用这个 endpoint: ok, down
     rpd_limit     integer     not null default -1, -- 周期内请求数限制-请求次数
     rpd_duration  integer     not null default 60, -- 周期内请求数限制-时间周期,单位:秒
     tpd_limit     integer     not null default -1, -- 周期内 token 数限制 - token 数
     tpd_duration  integer     not null default 60, -- 周期内 token 数限制 - 时间周期,单位:秒
     ifr_limit     integer     not null default -1, -- 并发请求数(in-flight request)限制
+    note          text        not null default '',
     create_at     TIMESTAMPTZ not null default now(),
     update_at     TIMESTAMPTZ not null default now(),
     PRIMARY KEY (id),
@@ -311,11 +313,13 @@ comment on column letsgen_model_endpoint_rlt.id is '主键';
 comment on column letsgen_model_endpoint_rlt.model_name is '模型名称';
 comment on column letsgen_model_endpoint_rlt.provider_name is '接入厂商名';
 comment on column letsgen_model_endpoint_rlt.endpoint_name is 'endpoint 名称';
+comment on column letsgen_model_endpoint_rlt.m_edp_status is '是否对该摸清启用这个 endpoint: ok, down';
 comment on column letsgen_model_endpoint_rlt.rpd_limit is '周期内请求数限制-请求次数';
 comment on column letsgen_model_endpoint_rlt.rpd_duration is '周期内请求数限制-时间周期,单位:秒';
 comment on column letsgen_model_endpoint_rlt.tpd_limit is '周期内 token 数限制 - token 数';
 comment on column letsgen_model_endpoint_rlt.tpd_duration is '周期内 token 数限制 - 时间周期,单位:秒';
 comment on column letsgen_model_endpoint_rlt.ifr_limit is '并发请求数(in-flight request)限制';
+comment on column letsgen_model_endpoint_rlt.note is '模型-接入点备注';
 comment on column letsgen_model_endpoint_rlt.create_at is '创建时间';
 comment on column letsgen_model_endpoint_rlt.update_at is '更新时间';
 

@@ -12,7 +12,7 @@ from typing import List, Tuple, Dict, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 from letsgen.entity.api_common_entity import UiUserRoleEnum, UiUserStatusEnum, EndpointStatusEnum, \
-    EndpointApiFormatEnum, CredentialType, CredentialStatus
+    EndpointApiFormatEnum, CredentialType, CredentialStatus, ModelEndpointStatusEnum
 
 
 class FirstAdminUser(BaseModel):
@@ -58,4 +58,18 @@ class EndpointForm(BaseModel):
     api_format: EndpointApiFormatEnum = EndpointApiFormatEnum.openai
     endpoint_path_info: str = ""
     endpoint_quota: str = ""
+    note: str = ""
+
+
+class AddEndpointForModelForm(BaseModel):
+    """给 model 添加 Endpoint 表单"""
+    model_name: str = Field(min_length=2, max_length=50)
+    provider_name: str = Field(min_length=1, max_length=50)
+    endpoint_name: str = Field(min_length=2, max_length=50)
+    m_edp_status: ModelEndpointStatusEnum = ModelEndpointStatusEnum.ok
+    rpd_limit: int | None = None
+    rpd_duration: int | None = None
+    tpd_limit: int | None = None
+    tpd_duration: int | None = None
+    ifr_limit: int | None = None
     note: str = ""

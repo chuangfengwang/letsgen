@@ -13,11 +13,11 @@ from typing import List
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.sql import text
-from sqlalchemy import select, delete, update, insert, func, and_, or_, not_
+from sqlalchemy import select, delete, update, insert, func, and_, or_, not_, desc
 
 import letsgen.db.pg_connection as pg_connection
 from letsgen.db.pg_db_entity_auto import LetsgenUser, LetsgenBillAccount, LetsgenAccountApikey, \
-    LetsgenUserAccountRlt, LetsgenWallet, LetsgenProviderCredential, LetsgenProviderEndpoint
+    LetsgenUserAccountRlt, LetsgenWallet, LetsgenProviderCredential, LetsgenProviderEndpoint, LetsgenModelEndpointRlt
 from letsgen.entity.api_common_entity import BillAccountForm, ApiKeyForm, ApikeyStatusEnum, UiUserRoleEnum, \
     UserToAccountRoleEnum, WalletStatusEnum, WalletForm
 from letsgen.entity.ui_admin_router_entity import UserForm
@@ -247,7 +247,8 @@ async def create_credential(letsgen_credential: LetsgenProviderCredential) -> Le
             await session.flush()
             return letsgen_credential
 
-async def query_valid_credential(provider:str)-> List[str]:
+
+async def query_valid_credential(provider: str) -> List[str]:
     """查询 provider 的有效凭证"""
     db_engine = await pg_connection.async_db_pg_engine()
     async_session_local = async_sessionmaker(bind=db_engine, class_=AsyncSession, expire_on_commit=False)
@@ -269,3 +270,29 @@ async def create_endpoint(letsgen_provider_endpoint: LetsgenProviderEndpoint) ->
             session.add(letsgen_provider_endpoint)
             await session.flush()
             return letsgen_provider_endpoint
+
+
+async def query_valid_endpoint(provider_name: str | None) -> List[LetsgenProviderEndpoint]:
+    """查询有效 endpoint"""
+    db_engine = await pg_connection.async_db_pg_engine()
+    async_session_local = async_sessionmaker(bind=db_engine, class_=AsyncSession, expire_on_commit=False)
+    async with (async_session_local() as session):
+        stmt = select(LetsgenProviderEndpoint)
+        if provider_name:
+            stmt = stmt.where(LetsgenProviderEndpoint.provider_name == provider_name)
+        stmt = stmt.order_by(desc(LetsgenProviderEndpoint.update_at))
+        result = await session.execute(stmt)
+        valid_list: List[LetsgenProviderEndpoint] = result.scalars().all()
+        return valid_list
+
+
+async def add_endpoint_for_model(letsgen_model_endpoint_rlt: LetsgenModelEndpointRlt) -> LetsgenModelEndpointRlt:
+    """为模型添加 endpoint"""
+    db_engine = await pg_connection.async_db_pg_engine()
+    async_session_local = async_sessionmaker(bind=db_engine, class_=AsyncSession, expire_on_commit=False)
+    async with async_session_local() as session:
+        async with session.begin():
+            session.add(letsgen_model_endpoint_rlt)
+            await session.flush()
+            return letsgen_model_endpoint_rlt
+    return None

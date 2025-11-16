@@ -68,6 +68,10 @@ class EndpointStatusEnum(str, Enum):
     ok = "ok"
     down = "down"
 
+class ModelEndpointStatusEnum(str, Enum):
+    """模型配置的 endpoint 状态"""
+    ok = "ok"
+    down = "down"
 
 class EndpointApiFormatEnum(str, Enum):
     openai = "openai"

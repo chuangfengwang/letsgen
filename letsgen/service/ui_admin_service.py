@@ -5,6 +5,8 @@
 # @Author  : chuangfeng.wang
 # @Time    : 2025-11-01 22:45
 """
+from __future__ import annotations
+
 import logging
 from typing import List
 
@@ -14,8 +16,9 @@ import letsgen.db.pg_db_dao as pg_db_dao
 import letsgen.exceptions.error_class as error_class
 import letsgen.utils.password_util as password_util
 from entity.auth_entity import Identity
-from letsgen.db.pg_db_entity_auto import (LetsgenUser, LetsgenProviderCredential, LetsgenProviderEndpoint, )
-from letsgen.entity.ui_admin_router_entity import FirstAdminUser, CredentialForm, EndpointForm
+from letsgen.db.pg_db_entity_auto import (LetsgenUser, LetsgenProviderCredential, LetsgenProviderEndpoint,
+                                          LetsgenModelEndpointRlt, )
+from letsgen.entity.ui_admin_router_entity import FirstAdminUser, CredentialForm, EndpointForm, AddEndpointForModelForm
 
 logger = logging.getLogger(__name__)
 
@@ -135,6 +138,12 @@ async def create_endpoint(endpoint_form: EndpointForm):
 
     try:
         letsgen_credential = await pg_db_dao.create_endpoint(letsgen_provider_endpoint)
+        if not letsgen_credential:
+            msg = (f"Create provider endpoint failed. provider_name: {endpoint_form.provider_name}, "
+                   f"endpoint_name: {endpoint_form.endpoint_name}")
+            logger.error(msg, exc_info=True)
+            raise error_class.UiOpsConfigError(msg)
+        return letsgen_credential
     except IntegrityError as e:
         msg = f"Conflict with existing data."
         logger.error(msg + f" provider_name: {endpoint_form.provider_name},"
@@ -147,9 +156,64 @@ async def create_endpoint(endpoint_form: EndpointForm):
                            f" endpoint_name: {endpoint_form.endpoint_name}",
                      exc_info=True)
         raise error_class.UiOpsConfigError(msg)
-    if not letsgen_credential:
-        if not letsgen_credential:
-            msg = (f"Create provider endpoint failed. provider_name: {endpoint_form.provider_name}, "
-                   f"endpoint_name: {endpoint_form.endpoint_name}")
+
+
+async def query_valid_endpoint(provider_name: str | None) -> List[str]:
+    """查询有效 endpoint"""
+    valid_endpoint_list = await pg_db_dao.query_valid_endpoint(provider_name)
+    endpoint_name_list = [endpoint.endpoint_name for endpoint in valid_endpoint_list]
+    return endpoint_name_list
+
+
+async def add_endpoint_for_model(form: AddEndpointForModelForm):
+    """为模型添加 endpoint"""
+    # 检查 endpoint 有效性
+    valid_endpoint_name_list = await query_valid_endpoint(form.provider_name)
+    if form.endpoint_name not in valid_endpoint_name_list:
+        msg = (f"Add model endpoint failed.  provider: {form.endpoint_name} "
+               f"has no endpoint_name: {form.endpoint_name}")
+        "model: {form.model_name},"
+        logger.error(msg + f" model: {form.model_name}", exc_info=True)
+        raise error_class.UiOpsConfigError(msg)
+    # 为模型添加 endpoint
+    letsgen_model_endpoint_rlt = LetsgenModelEndpointRlt(
+        model_name=form.model_name,
+        provider_name=form.provider_name,
+        endpoint_name=form.endpoint_name,
+        m_edp_status=form.m_edp_status,
+        note=form.note,
+        **{}
+    )
+    if form.rpd_limit is not None:
+        letsgen_model_endpoint_rlt.rpd_limit = form.rpd_limit
+    if form.rpd_duration is not None:
+        letsgen_model_endpoint_rlt.rpd_duration = form.rpd_duration
+    if form.tpd_limit is not None:
+        letsgen_model_endpoint_rlt.tpd_limit = form.tpd_limit
+    if form.tpd_duration is not None:
+        letsgen_model_endpoint_rlt.tpd_duration = form.tpd_duration
+    if form.ifr_limit is not None:
+        letsgen_model_endpoint_rlt.ifr_limit = form.ifr_limit
+
+    try:
+        letsgen_model_endpoint_rlt = await pg_db_dao.add_endpoint_for_model(letsgen_model_endpoint_rlt)
+        if not letsgen_model_endpoint_rlt:
+            msg = (f"Add model endpoint failed. model_name: {form.model_name}, provider_name: {form.provider_name}, "
+                   f"endpoint_name: {form.endpoint_name}")
+            logger.error(msg, exc_info=True)
             raise error_class.UiOpsConfigError(msg)
-    return letsgen_credential
+        return letsgen_model_endpoint_rlt
+    except IntegrityError as e:
+        msg = f"Conflict with existing data."
+        logger.error(msg + f" model_name: {form.model_name},"
+                           f" provider_name: {form.provider_name},"
+                           f" endpoint_name: {form.endpoint_name}",
+                     exc_info=True)
+        raise error_class.UiOpsConfigError(msg)
+    except SQLAlchemyError as e:
+        msg = f"Add model endpoint error. Please contact system admin."
+        logger.error(msg + f" model_name: {form.model_name},"
+                           f" provider_name: {form.provider_name},"
+                           f" endpoint_name: {form.endpoint_name}",
+                     exc_info=True)
+        raise error_class.UiOpsConfigError(msg)

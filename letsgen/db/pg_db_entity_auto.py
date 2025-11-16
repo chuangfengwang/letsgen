@@ -109,11 +109,13 @@ class LetsgenModelEndpointRlt(SQLModel, table=True):
     model_name: str = Field(sa_column=Column('model_name', String(50), nullable=False, server_default=text("''::character varying"), comment='模型名称'))
     provider_name: str = Field(sa_column=Column('provider_name', String(50), nullable=False, server_default=text("''::character varying"), comment='接入厂商名'))
     endpoint_name: str = Field(sa_column=Column('endpoint_name', String(50), nullable=False, server_default=text("''::character varying"), comment='endpoint 名称'))
+    m_edp_status: str = Field(sa_column=Column('m_edp_status', String(10), nullable=False, server_default=text("''::character varying"), comment='是否对该摸清启用这个 endpoint: ok, down'))
     rpd_limit: int = Field(sa_column=Column('rpd_limit', Integer, nullable=False, server_default=text("'-1'::integer"), comment='周期内请求数限制-请求次数'))
     rpd_duration: int = Field(sa_column=Column('rpd_duration', Integer, nullable=False, server_default=text('60'), comment='周期内请求数限制-时间周期,单位:秒'))
     tpd_limit: int = Field(sa_column=Column('tpd_limit', Integer, nullable=False, server_default=text("'-1'::integer"), comment='周期内 token 数限制 - token 数'))
     tpd_duration: int = Field(sa_column=Column('tpd_duration', Integer, nullable=False, server_default=text('60'), comment='周期内 token 数限制 - 时间周期,单位:秒'))
     ifr_limit: int = Field(sa_column=Column('ifr_limit', Integer, nullable=False, server_default=text("'-1'::integer"), comment='并发请求数(in-flight request)限制'))
+    note: str = Field(sa_column=Column('note', Text, nullable=False, server_default=text("''::text"), comment='模型-接入点备注'))
     create_at: datetime.datetime = Field(sa_column=Column('create_at', DateTime(True), nullable=False, server_default=text('now()'), comment='创建时间'))
     update_at: datetime.datetime = Field(sa_column=Column('update_at', DateTime(True), nullable=False, server_default=text('now()'), comment='更新时间'))
 
