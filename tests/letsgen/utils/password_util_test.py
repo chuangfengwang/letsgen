@@ -114,7 +114,40 @@ def test_jwt_expiration():
     print("Token 已过期，验证失败。")
 
 
+def test_encrypt_aes_gcm():
+    # ⚠️ 实际应用中请使用更强大的密码
+    SECRET_PASSWORD = "MySuperSecretPassword123"
+    ORIGINAL_MESSAGE = "这是我的绝密信息，只有我知道密码才能看到。"
+
+    print(f"原始消息: {ORIGINAL_MESSAGE}")
+    print(f"使用的密码: {SECRET_PASSWORD}")
+    print("-" * 30)
+
+    try:
+        # 1. 加密
+        encrypted = encrypt_aes_gcm(ORIGINAL_MESSAGE, SECRET_PASSWORD)
+        print(f"加密结果 (Base64): {encrypted}")
+        print("-" * 30)
+
+        # 2. 解密 (使用正确的密码)
+        decrypted = decrypt_aes_gcm(encrypted, SECRET_PASSWORD)
+        print(f"解密结果: {decrypted}")
+        print("-" * 30)
+
+        # 3. 测试错误密码 (应抛出异常)
+        try:
+            wrong_password = "WrongPassword"
+            print(f"尝试使用错误密码 '{wrong_password}' 解密...")
+            decrypt_aes_gcm(encrypted, wrong_password)
+        except Exception as e:
+            print(f"解密失败，符合预期：{e.__class__.__name__}")
+
+    except Exception as e:
+        print(f"操作失败: {e}")
+
+
 if __name__ == '__main__':
     # test_hash_password()
-    test_jwt_functions()
+    # test_jwt_functions()
     # test_jwt_expiration()
+    test_encrypt_aes_gcm()

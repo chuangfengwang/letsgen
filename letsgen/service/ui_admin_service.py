@@ -60,7 +60,7 @@ async def create_credential(
 ) -> LetsgenProviderCredential:
     """创建凭证"""
     # 加密凭证进行存储
-    encrypt_credential = password_util.encrypt_aes(credential_form.credential_value)
+    encrypt_credential = password_util.encrypt_aes_gcm(credential_form.credential_value)
     letsgen_credential = LetsgenProviderCredential(
         provider_name=credential_form.provider_name,
         credential_name=credential_form.credential_name,
@@ -160,7 +160,7 @@ async def create_endpoint(endpoint_form: EndpointForm):
 
 async def query_valid_endpoint(provider_name: str | None) -> List[str]:
     """查询有效 endpoint"""
-    valid_endpoint_list = await pg_db_dao.query_valid_endpoint(provider_name)
+    valid_endpoint_list = await pg_db_dao.query_provider_valid_endpoint(provider_name)
     endpoint_name_list = [endpoint.endpoint_name for endpoint in valid_endpoint_list]
     return endpoint_name_list
 

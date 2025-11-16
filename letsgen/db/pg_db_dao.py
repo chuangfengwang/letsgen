@@ -19,7 +19,7 @@ import letsgen.db.pg_connection as pg_connection
 from letsgen.db.pg_db_entity_auto import LetsgenUser, LetsgenBillAccount, LetsgenAccountApikey, \
     LetsgenUserAccountRlt, LetsgenWallet, LetsgenProviderCredential, LetsgenProviderEndpoint, LetsgenModelEndpointRlt
 from letsgen.entity.api_common_entity import BillAccountForm, ApiKeyForm, ApikeyStatusEnum, UiUserRoleEnum, \
-    UserToAccountRoleEnum, WalletStatusEnum, WalletForm
+    UserToAccountRoleEnum, WalletStatusEnum, WalletForm, ModelEndpointStatusEnum, EndpointStatusEnum, CredentialStatus
 from letsgen.entity.ui_admin_router_entity import UserForm
 from letsgen.exceptions import error_class
 from letsgen.utils.password_util import hash_password
@@ -272,8 +272,8 @@ async def create_endpoint(letsgen_provider_endpoint: LetsgenProviderEndpoint) ->
             return letsgen_provider_endpoint
 
 
-async def query_valid_endpoint(provider_name: str | None) -> List[LetsgenProviderEndpoint]:
-    """查询有效 endpoint"""
+async def query_provider_valid_endpoint(provider_name: str | None) -> List[LetsgenProviderEndpoint]:
+    """查询指定 provider 的有效 endpoint"""
     db_engine = await pg_connection.async_db_pg_engine()
     async_session_local = async_sessionmaker(bind=db_engine, class_=AsyncSession, expire_on_commit=False)
     async with (async_session_local() as session):
@@ -282,7 +282,7 @@ async def query_valid_endpoint(provider_name: str | None) -> List[LetsgenProvide
             stmt = stmt.where(LetsgenProviderEndpoint.provider_name == provider_name)
         stmt = stmt.order_by(desc(LetsgenProviderEndpoint.update_at))
         result = await session.execute(stmt)
-        valid_list: List[LetsgenProviderEndpoint] = result.scalars().all()
+        valid_list: List[LetsgenProviderEndpoint] = list(result.scalars().all())
         return valid_list
 
 
@@ -295,4 +295,57 @@ async def add_endpoint_for_model(letsgen_model_endpoint_rlt: LetsgenModelEndpoin
             session.add(letsgen_model_endpoint_rlt)
             await session.flush()
             return letsgen_model_endpoint_rlt
-    return None
+
+
+# todo: 加缓存
+async def query_model_valid_endpoint_rlt(model_id: str, provider: str | None = None) -> List[LetsgenModelEndpointRlt]:
+    """查询指定模型,指定 provider的有效 endpoint 及其容量配置"""
+    db_engine = await pg_connection.async_db_pg_engine()
+    async_session_local = async_sessionmaker(bind=db_engine, class_=AsyncSession, expire_on_commit=False)
+    async with async_session_local() as session:
+        if provider:
+            stmt = select(LetsgenModelEndpointRlt).where(
+                and_(LetsgenModelEndpointRlt.model_name == model_id,
+                     LetsgenModelEndpointRlt.provider_name == provider,
+                     LetsgenModelEndpointRlt.m_edp_status == ModelEndpointStatusEnum.ok)
+            )
+        else:
+            stmt = select(LetsgenModelEndpointRlt).where(
+                and_(LetsgenModelEndpointRlt.model_name == model_id,
+                     LetsgenModelEndpointRlt.m_edp_status == ModelEndpointStatusEnum.ok)
+            )
+        result = await session.execute(stmt)
+        valid_list: List[LetsgenModelEndpointRlt] = list(result.scalars().all())
+        return valid_list
+
+
+# todo: 加缓存
+async def query_endpoint(provider: str, endpoint: str) -> LetsgenProviderEndpoint:
+    """查询指定模型 指定 provider 的有效 endpoint 及其容量配置"""
+    db_engine = await pg_connection.async_db_pg_engine()
+    async_session_local = async_sessionmaker(bind=db_engine, class_=AsyncSession, expire_on_commit=False)
+    async with async_session_local() as session:
+        stmt = select(LetsgenProviderEndpoint).where(
+            and_(LetsgenProviderEndpoint.provider_name == provider,
+                 LetsgenProviderEndpoint.endpoint_name == endpoint,
+                 LetsgenProviderEndpoint.endpoint_status == EndpointStatusEnum.ok)
+        )
+        result = await session.execute(stmt)
+        endpoint = result.scalar_one_or_none()
+        return endpoint
+
+
+# todo: 加缓存
+async def query_endpoint_credit(provider: str, credential_name: str) -> LetsgenProviderCredential:
+    """查询指定 endpoint 的凭证"""
+    db_engine = await pg_connection.async_db_pg_engine()
+    async_session_local = async_sessionmaker(bind=db_engine, class_=AsyncSession, expire_on_commit=False)
+    async with async_session_local() as session:
+        stmt = select(LetsgenProviderCredential).where(
+            and_(LetsgenProviderCredential.provider_name == provider,
+                 LetsgenProviderCredential.credential_name == credential_name,
+                 LetsgenProviderCredential.credential_status == CredentialStatus.ok)
+        )
+        result = await session.execute(stmt)
+        credential = result.scalar_one_or_none()
+        return credential

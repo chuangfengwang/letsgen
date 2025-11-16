@@ -16,13 +16,9 @@ from letsgen.exceptions import error_class
 class LlmTransferService:
     """LLM API 转换服务基类"""
 
-    def pick_endpoint(self, model_id: str) -> Tuple[str, str]:
+    async def pick_endpoint(self, model_name: str) -> Tuple[str, str, str]:
         """获取模型对应的 endpoint
-        :return (provider, endpoint)"""
-        raise NotImplementedError()
-
-    def pick_endpoint_auth(self, endpoint: str) -> str:
-        """获取 endpoint 对应的鉴权信息"""
+        :return (provider, endpoint_baseurl, auth)"""
         raise NotImplementedError()
 
     def pick_proxy(self, endpoint: str) -> str | None:
@@ -87,19 +83,18 @@ class LlmTransferService:
         headers = {}
         if body is None:
             raise error_class.LlmParamError("Missing body param")
-        model_id, is_stream = self.parse_model_and_stream(body)
-        context.model_id = model_id
+        model_name, is_stream = self.parse_model_and_stream(body)
+        context.model_id = model_name
         context.is_stream = is_stream
         # 解析 endpoint 信息
-        provider_name, endpoint = self.pick_endpoint(model_id)
+        provider_name, endpoint, edp_auth = await self.pick_endpoint(model_name)
         if endpoint is None:
-            raise error_class.AdminConfigError(f"Cannot find endpoint for model {model_id}")
+            raise error_class.AdminConfigError(f"Cannot find endpoint for model {model_name}")
         context.provider_name = provider_name
         context.provider_endpoint = endpoint
-        auth_id = self.pick_endpoint_auth(endpoint)
-        if auth_id is None:
+        if edp_auth is None:
             raise error_class.AdminConfigError(f"Cannot find provider auth for endpoint {endpoint}")
-        context.provider_auth_id = auth_id
+        context.provider_auth_id = edp_auth
         # 解析代理
         proxy = self.pick_proxy(endpoint)
         # 解析请求参数
@@ -108,7 +103,7 @@ class LlmTransferService:
         context.provider_body_param = provider_params
         context.mark_event_dt("param_transfer_end")
         context.mark_event_dt("call_endpoint_start")
-        response = await self.call_endpoint(endpoint, auth=auth_id, params=provider_params, proxy=proxy)
+        response = await self.call_endpoint(endpoint, auth=edp_auth, params=provider_params, proxy=proxy)
         context.provider_response = response
         context.mark_event_dt("call_endpoint_responded")
         context.mark_event_dt("transfer_response_start")

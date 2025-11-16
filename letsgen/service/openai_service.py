@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import random
 from datetime import datetime
 from typing import Tuple, Any, Dict, Union, List, AsyncGenerator, cast, AsyncIterable
 
@@ -24,6 +25,8 @@ from letsgen.entity.llm_entity import LlmRequestContext
 from letsgen.exceptions import error_class
 from letsgen.service.llm_api_transfer import LlmTransferService
 from letsgen.utils.function_util import all_param_expect_kwargs
+import letsgen.db.pg_db_dao as pg_db_dao
+from utils import password_util
 
 logger = logging.getLogger(__name__)
 
@@ -59,19 +62,47 @@ class OpenAiService(LlmTransferService):
         del client
         return params
 
-    def pick_endpoint(self, model_id: str) -> Tuple[str, str]:
-        """todo: 获取模型对应的 endpoint
-        :return (provider, endpoint)"""
+    async def pick_endpoint(self, model_id: str) -> Tuple[str, str, str]:
+        """获取模型对应的 endpoint
+        :return (provider, endpoint_baseurl, auth)"""
+        # todo: 1. 查询模型对应的 provider
         provider, model = model_id.split("/", maxsplit=1)
-        endpoint, _ = self.mock_provider.get(provider)
-        return provider, endpoint
+        # 查询所有有效 endpoint
+        edp_rlt_list = await pg_db_dao.query_model_valid_endpoint_rlt(model_id)
+        if not edp_rlt_list:
+            msg = f"No valid endpoints found for model. model_name: {model_id}"
+            logger.error(msg)
+            raise error_class.AdminConfigError(msg)
 
-    def pick_endpoint_auth(self, endpoint: str) -> str:
-        """todo: 获取 endpoint 对应的鉴权信息"""
-        for _, v in self.mock_provider.items():
-            if v[0] == endpoint:
-                return v[1]
-        return "place_holder_api_key"
+        # todo: 2. 选择当前用量少的 endpoint
+        edp_rlt = random.choice(edp_rlt_list)
+        endpoint_name = edp_rlt.endpoint_name
+
+        # 3. 查询选择的 endpoint 的凭证
+        letsgen_provider_endpoint = await pg_db_dao.query_endpoint(provider, endpoint_name)
+        if letsgen_provider_endpoint is None or (
+            not letsgen_provider_endpoint.credential_name1 and
+            not letsgen_provider_endpoint.credential_name2):
+            # 没有有效凭证
+            msg = f"No valid credit found for endpoint. endpoint_name: {endpoint_name}"
+            logger.error(msg)
+            raise error_class.AdminConfigError(msg)
+        # 查询 credential
+        credits_name = letsgen_provider_endpoint.credential_name1 \
+            if letsgen_provider_endpoint.credential_name1 \
+            else letsgen_provider_endpoint.credential_name2
+        credential = await pg_db_dao.query_endpoint_credit(letsgen_provider_endpoint.provider_name, credits_name)
+        if not credential:
+            msg = (f"No credit found for endpoint. provider_name: {letsgen_provider_endpoint.provider_name}, "
+                   f"credits_name: {credits_name}")
+            logger.error(msg)
+            raise error_class.AdminConfigError(msg)
+
+        # todo: 4. 根据凭证类型构造不同 auth
+        auth = password_util.decrypt_aes_gcm(credential.credential_value)
+
+        # endpoint, auth = self.mock_provider.get(provider)
+        return provider, letsgen_provider_endpoint.endpoint_baseurl, auth
 
     def pick_proxy(self, endpoint: str) -> str | None:
         """获取 endpoint 对应的代理信息"""
@@ -251,8 +282,12 @@ class OpenAiService(LlmTransferService):
                 reason_token_num = 0
                 if usage.prompt_tokens_details:
                     cached_token_num = usage.prompt_tokens_details.cached_tokens
+                    if cached_token_num is None:
+                        cached_token_num = 0
                 if usage.completion_tokens_details:
                     reason_token_num = usage.completion_tokens_details.reasoning_tokens
+                    if reason_token_num is None:
+                        reason_token_num = 0
             else:
                 input_token_num = 0
                 cached_token_num = 0
