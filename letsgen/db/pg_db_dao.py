@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from decimal import Decimal
 from typing import List
 
@@ -299,7 +300,7 @@ async def add_endpoint_for_model(letsgen_model_endpoint_rlt: LetsgenModelEndpoin
             return letsgen_model_endpoint_rlt
 
 
-query_model_valid_endpoint_rlt_lru_cache = TTLCache(maxsize=100, ttl=60.)
+query_model_valid_endpoint_rlt_lru_cache = TTLCache(maxsize=100, ttl=60., timer=time.monotonic)
 
 
 @acached(cache=query_model_valid_endpoint_rlt_lru_cache)
@@ -324,7 +325,7 @@ async def query_model_valid_endpoint_rlt(model_id: str, provider: str | None = N
         return valid_list
 
 
-query_endpoint_lru_cache = TTLCache(maxsize=100, ttl=60.)
+query_endpoint_lru_cache = TTLCache(maxsize=100, ttl=60., timer=time.monotonic)
 
 
 @acached(cache=query_endpoint_lru_cache)
@@ -343,7 +344,7 @@ async def query_endpoint(provider: str, endpoint: str) -> LetsgenProviderEndpoin
         return endpoint
 
 
-query_endpoint_credit_lru_cache = TTLCache(maxsize=100, ttl=60.)
+query_endpoint_credit_lru_cache = TTLCache(maxsize=100, ttl=60., timer=time.monotonic)
 
 
 @acached(cache=query_endpoint_credit_lru_cache)
