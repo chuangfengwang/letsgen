@@ -31,7 +31,7 @@ letsgen_workers = 1
 timeout_keep_alive = 5
 
 # api doc 配置
-expose_api_doc = True
+expose_api_doc = True if debug_flag else False
 use_self_hosted_doc_src = True
 
 # 服务工作目录
@@ -52,7 +52,7 @@ ui_static_dir = os.path.join(work_dir, "../static-ui")
 # prometheus 多进程指标目录
 prometheus_metrics_dir = os.environ.get("PROMETHEUS_MULTIPROC_DIR")
 if not prometheus_metrics_dir:
-    prometheus_metrics_dir = '/tmp/prometheus_metrics'
+    prometheus_metrics_dir = '/tmp/letsgen_prometheus_metrics'
     os.environ['PROMETHEUS_MULTIPROC_DIR'] = prometheus_metrics_dir
 if os.path.exists(prometheus_metrics_dir):
     shutil.rmtree(prometheus_metrics_dir)

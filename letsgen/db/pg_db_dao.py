@@ -11,15 +11,17 @@ import logging
 from decimal import Decimal
 from typing import List
 
+from asyncache import cached as acached
+from cachetools import TTLCache
+from sqlalchemy import select, func, and_, desc
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.sql import text
-from sqlalchemy import select, delete, update, insert, func, and_, or_, not_, desc
 
 import letsgen.db.pg_connection as pg_connection
 from letsgen.db.pg_db_entity_auto import LetsgenUser, LetsgenBillAccount, LetsgenAccountApikey, \
     LetsgenUserAccountRlt, LetsgenWallet, LetsgenProviderCredential, LetsgenProviderEndpoint, LetsgenModelEndpointRlt
-from letsgen.entity.api_common_entity import BillAccountForm, ApiKeyForm, ApikeyStatusEnum, UiUserRoleEnum, \
-    UserToAccountRoleEnum, WalletStatusEnum, WalletForm, ModelEndpointStatusEnum, EndpointStatusEnum, CredentialStatus
+from letsgen.entity.api_common_entity import BillAccountForm, ApiKeyForm, ApikeyStatusEnum, UserToAccountRoleEnum, \
+    WalletStatusEnum, WalletForm, ModelEndpointStatusEnum, EndpointStatusEnum, CredentialStatus
 from letsgen.entity.ui_admin_router_entity import UserForm
 from letsgen.exceptions import error_class
 from letsgen.utils.password_util import hash_password
@@ -297,7 +299,10 @@ async def add_endpoint_for_model(letsgen_model_endpoint_rlt: LetsgenModelEndpoin
             return letsgen_model_endpoint_rlt
 
 
-# todo: 加缓存
+query_model_valid_endpoint_rlt_lru_cache = TTLCache(maxsize=100, ttl=60.)
+
+
+@acached(cache=query_model_valid_endpoint_rlt_lru_cache)
 async def query_model_valid_endpoint_rlt(model_id: str, provider: str | None = None) -> List[LetsgenModelEndpointRlt]:
     """查询指定模型,指定 provider的有效 endpoint 及其容量配置"""
     db_engine = await pg_connection.async_db_pg_engine()
@@ -319,7 +324,10 @@ async def query_model_valid_endpoint_rlt(model_id: str, provider: str | None = N
         return valid_list
 
 
-# todo: 加缓存
+query_endpoint_lru_cache = TTLCache(maxsize=100, ttl=60.)
+
+
+@acached(cache=query_endpoint_lru_cache)
 async def query_endpoint(provider: str, endpoint: str) -> LetsgenProviderEndpoint:
     """查询指定模型 指定 provider 的有效 endpoint 及其容量配置"""
     db_engine = await pg_connection.async_db_pg_engine()
@@ -335,7 +343,10 @@ async def query_endpoint(provider: str, endpoint: str) -> LetsgenProviderEndpoin
         return endpoint
 
 
-# todo: 加缓存
+query_endpoint_credit_lru_cache = TTLCache(maxsize=100, ttl=60.)
+
+
+@acached(cache=query_endpoint_credit_lru_cache)
 async def query_endpoint_credit(provider: str, credential_name: str) -> LetsgenProviderCredential:
     """查询指定 endpoint 的凭证"""
     db_engine = await pg_connection.async_db_pg_engine()
