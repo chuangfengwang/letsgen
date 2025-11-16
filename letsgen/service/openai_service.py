@@ -62,9 +62,9 @@ class OpenAiService(LlmTransferService):
         del client
         return params
 
-    async def pick_endpoint(self, model_id: str) -> Tuple[str, str, str]:
+    async def pick_endpoint(self, model_id: str) -> Tuple[str, str, str, str]:
         """获取模型对应的 endpoint
-        :return (provider, endpoint_baseurl, auth)"""
+        :return (provider, endpoint_baseurl, auth, provider_model_id)"""
         # todo: 1. 查询模型对应的 provider
         provider, model = model_id.split("/", maxsplit=1)
         # 查询所有有效 endpoint
@@ -76,7 +76,7 @@ class OpenAiService(LlmTransferService):
 
         # todo: 2. 选择当前用量少的 endpoint
         edp_rlt = random.choice(edp_rlt_list)
-        endpoint_name = edp_rlt.endpoint_name
+        endpoint_name, provider_model_id = edp_rlt.endpoint_name, edp_rlt.provider_model_id
 
         # 3. 查询选择的 endpoint 的凭证
         letsgen_provider_endpoint = await pg_db_dao.query_endpoint(provider, endpoint_name)
@@ -102,7 +102,7 @@ class OpenAiService(LlmTransferService):
         auth = password_util.decrypt_aes_gcm(credential.credential_value)
 
         # endpoint, auth = self.mock_provider.get(provider)
-        return provider, letsgen_provider_endpoint.endpoint_baseurl, auth
+        return provider, letsgen_provider_endpoint.endpoint_baseurl, auth, provider_model_id
 
     def pick_proxy(self, endpoint: str) -> str | None:
         """获取 endpoint 对应的代理信息"""
@@ -156,7 +156,7 @@ class OpenAiService(LlmTransferService):
         else:
             return model
 
-    def transfer_param(self, body: dict, headers: dict, queries: dict) -> dict:
+    def transfer_param(self, body: dict, headers: dict, queries: dict, context: LlmRequestContext) -> dict:
         """转换参数
         :return : 传给厂商的参数
         """
@@ -166,7 +166,7 @@ class OpenAiService(LlmTransferService):
             if key in self._openai_chat_completions_param:
                 # model 参数需要映射, 其他参数保持即可
                 if key == "model":
-                    param[key] = self.model_mapping(body[key])
+                    param[key] = context.provider_model_id
                 else:
                     param[key] = body[key]
             else:

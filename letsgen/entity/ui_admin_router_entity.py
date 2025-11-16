@@ -66,6 +66,8 @@ class AddEndpointForModelForm(BaseModel):
     model_name: str = Field(min_length=2, max_length=50)
     provider_name: str = Field(min_length=1, max_length=50)
     endpoint_name: str = Field(min_length=2, max_length=50)
+    provider_model_id: str = Field(min_length=1, max_length=50)
+    provider_params: str | None = None
     m_edp_status: ModelEndpointStatusEnum = ModelEndpointStatusEnum.ok
     rpd_limit: int | None = None
     rpd_duration: int | None = None

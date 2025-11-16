@@ -109,6 +109,8 @@ class LetsgenModelEndpointRlt(SQLModel, table=True):
     model_name: str = Field(sa_column=Column('model_name', String(50), nullable=False, server_default=text("''::character varying"), comment='模型名称'))
     provider_name: str = Field(sa_column=Column('provider_name', String(50), nullable=False, server_default=text("''::character varying"), comment='接入厂商名'))
     endpoint_name: str = Field(sa_column=Column('endpoint_name', String(50), nullable=False, server_default=text("''::character varying"), comment='endpoint 名称'))
+    provider_model_id: str = Field(sa_column=Column('provider_model_id', String(50), nullable=False, server_default=text("''::character varying"), comment='厂商侧模型代号'))
+    provider_params: str = Field(sa_column=Column('provider_params', Text, nullable=False, server_default=text("''::text"), comment='厂商侧额外调用参数'))
     m_edp_status: str = Field(sa_column=Column('m_edp_status', String(10), nullable=False, server_default=text("''::character varying"), comment='是否对该摸清启用这个 endpoint: ok, down'))
     rpd_limit: int = Field(sa_column=Column('rpd_limit', Integer, nullable=False, server_default=text("'-1'::integer"), comment='周期内请求数限制-请求次数'))
     rpd_duration: int = Field(sa_column=Column('rpd_duration', Integer, nullable=False, server_default=text('60'), comment='周期内请求数限制-时间周期,单位:秒'))

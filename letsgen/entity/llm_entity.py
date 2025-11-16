@@ -50,6 +50,8 @@ class LlmRequestContext(BaseModel):
     provider_auth_id: str | None = None
     # 厂商 endpoint
     provider_endpoint: str | None = None
+    # 厂商侧模型代号
+    provider_model_id: str | None = None
     # 厂商返回的原始结果
     provider_response: Any | None = None
     # 最终返回给用户的结果

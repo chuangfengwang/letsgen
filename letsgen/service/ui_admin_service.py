@@ -180,10 +180,13 @@ async def add_endpoint_for_model(form: AddEndpointForModelForm):
         model_name=form.model_name,
         provider_name=form.provider_name,
         endpoint_name=form.endpoint_name,
+        provider_model_id=form.provider_model_id,
         m_edp_status=form.m_edp_status,
         note=form.note,
         **{}
     )
+    if form.provider_params is not None:
+        letsgen_model_endpoint_rlt.provider_params = form.provider_params
     if form.rpd_limit is not None:
         letsgen_model_endpoint_rlt.rpd_limit = form.rpd_limit
     if form.rpd_duration is not None:

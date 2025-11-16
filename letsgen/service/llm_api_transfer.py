@@ -16,16 +16,16 @@ from letsgen.exceptions import error_class
 class LlmTransferService:
     """LLM API 转换服务基类"""
 
-    async def pick_endpoint(self, model_name: str) -> Tuple[str, str, str]:
+    async def pick_endpoint(self, model_name: str) -> Tuple[str, str, str, str]:
         """获取模型对应的 endpoint
-        :return (provider, endpoint_baseurl, auth)"""
+        :return (provider, endpoint_baseurl, auth, provider_model_id)"""
         raise NotImplementedError()
 
     def pick_proxy(self, endpoint: str) -> str | None:
         """获取 endpoint 对应的代理信息"""
         raise NotImplementedError()
 
-    def transfer_param(self, body: dict, headers: dict, queries: dict) -> dict:
+    def transfer_param(self, body: dict, headers: dict, queries: dict, context: LlmRequestContext) -> dict:
         """转换参数
         :return : 传给厂商的参数
         """
@@ -87,23 +87,24 @@ class LlmTransferService:
         context.model_id = model_name
         context.is_stream = is_stream
         # 解析 endpoint 信息
-        provider_name, endpoint, edp_auth = await self.pick_endpoint(model_name)
-        if endpoint is None:
+        provider_name, endpoint_baseurl, edp_auth, provider_model_id = await self.pick_endpoint(model_name)
+        if endpoint_baseurl is None:
             raise error_class.AdminConfigError(f"Cannot find endpoint for model {model_name}")
         context.provider_name = provider_name
-        context.provider_endpoint = endpoint
+        context.provider_endpoint = endpoint_baseurl
+        context.provider_model_id = provider_model_id
         if edp_auth is None:
-            raise error_class.AdminConfigError(f"Cannot find provider auth for endpoint {endpoint}")
+            raise error_class.AdminConfigError(f"Cannot find provider auth for endpoint {endpoint_baseurl}")
         context.provider_auth_id = edp_auth
         # 解析代理
-        proxy = self.pick_proxy(endpoint)
+        proxy = self.pick_proxy(endpoint_baseurl)
         # 解析请求参数
         context.mark_event_dt("param_transfer_start")
-        provider_params = self.transfer_param(body, headers, {})
+        provider_params = self.transfer_param(body, headers, {}, context)
         context.provider_body_param = provider_params
         context.mark_event_dt("param_transfer_end")
         context.mark_event_dt("call_endpoint_start")
-        response = await self.call_endpoint(endpoint, auth=edp_auth, params=provider_params, proxy=proxy)
+        response = await self.call_endpoint(endpoint_baseurl, auth=edp_auth, params=provider_params, proxy=proxy)
         context.provider_response = response
         context.mark_event_dt("call_endpoint_responded")
         context.mark_event_dt("transfer_response_start")
