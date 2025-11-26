@@ -41,13 +41,15 @@ app.add_middleware(e2e_tracelog_middleware.RequestResponseLogger)
 app.include_router(sys_router.router)
 # api 相关的系统状态接口
 app.include_router(api_sys_router.router)
-# openai 兼容接口
-app.include_router(openai_router.router)
 # UI 用到的接口
 app.include_router(ui_admin_router.router)
 app.include_router(ui_normal_router.router)
 app.include_router(ui_sys_router.router)
+# api 相关的系统状态接口
+app.include_router(api_sys_router.router)
 
+# openai 兼容接口
+app.mount("/api/openai/v1", openai_router.openai_app)
 # 前端/静态资源
 app.mount("/ui", StaticFiles(directory=config.ui_static_dir), name="ui_static")
 # prometheus 监控端点

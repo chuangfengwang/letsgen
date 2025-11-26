@@ -220,6 +220,10 @@ class ConcurrencyLimitMiddleware:
         if scope["path"] not in config.letsgen_llm_api:
             await self.app(scope, receive, send)
             return
+        # 跳过 OPTIONS 请求
+        if scope.get("method", "").upper() == "OPTIONS":
+            await self.app(scope, receive, send)
+            return
 
         # 缓存请求体
         body_chunks = []

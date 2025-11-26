@@ -31,6 +31,10 @@ class RequestResponseLogger:
         if scope["type"] != "http":
             await self.app(scope, receive, send)
             return
+        # 跳过 OPTIONS 请求
+        if scope.get("method", "").upper() == "OPTIONS":
+            await self.app(scope, receive, send)
+            return
 
         # 创建 Request 对象用于读取请求信息
         # request = Request(scope, receive)

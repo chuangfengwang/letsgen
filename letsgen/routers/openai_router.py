@@ -10,9 +10,10 @@ from __future__ import annotations
 import asyncio
 from typing import cast
 
-from fastapi import APIRouter, Request, Response, Depends, BackgroundTasks
+from fastapi import APIRouter, Request, Response, Depends, BackgroundTasks, FastAPI
 from fastapi.responses import StreamingResponse
 from sse_starlette import EventSourceResponse
+from starlette.middleware.cors import CORSMiddleware
 from watchfiles import awatch
 
 import letsgen.dependencies.auth as auth
@@ -21,11 +22,19 @@ from letsgen.service.llm_api_transfer import LlmTransferService
 from letsgen.service.openai_service import OpenAiService
 from utils.chunk_response import SseChunkStreamingResponse
 
-router = APIRouter(prefix="/api/openai/v1", tags=["openai"])
+# router = APIRouter(prefix="/api/openai/v1", tags=["openai"])
+openai_app = FastAPI()
+openai_app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 llmTransferService: LlmTransferService = OpenAiService()
 
 
-@router.post(
+@openai_app.post(
     "/chat/completions",
     dependencies=[Depends(auth.header_authorize_check)]
 )
@@ -59,7 +68,8 @@ async def chat_completions(
         return provider_resp
 
 
-@router.get("/chat/completion")
+# for debug purpose
+@openai_app.get("/chat/completion")
 async def get_chat_completions(account: str, model: str, duration: float = 1):
     """模拟耗时任务"""
     await asyncio.sleep(duration)
