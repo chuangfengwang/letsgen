@@ -46,6 +46,8 @@ sqlmodel==0.0.27
 # redis
 redis==6.4.0
 hiredis==3.2.1
+# minio
+miniopy-async==1.23.4
 # passoword hashing
 bcrypt==5.0.0
 pycryptodome==3.23.0

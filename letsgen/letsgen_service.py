@@ -73,5 +73,5 @@ if __name__ == '__main__':
         # access_log=False,  # 禁用 access 日志
         proxy_headers=True,  # 启用 X-Forwarded-For 支持
         forwarded_allow_ips="192.168.0.0/16,172.16.0.0/12,10.0.0.0/8,127.0.0.1,[::1]",  # 信任反代ip范围为局域网 ip
-        log_config=concurrent_log.UVICORN_LOGGING_CONFIG,  # 禁用默认日志配置
+        log_config=concurrent_log.UVICORN_LOGGING_CONFIG,  # 使用自定义日志配置
     )

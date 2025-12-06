@@ -54,6 +54,8 @@ prometheus_metrics_dir = os.environ.get("PROMETHEUS_MULTIPROC_DIR")
 if not prometheus_metrics_dir:
     prometheus_metrics_dir = '/tmp/letsgen_prometheus_metrics'
     os.environ['PROMETHEUS_MULTIPROC_DIR'] = prometheus_metrics_dir
+if not prometheus_metrics_dir.startswith("/"):
+    prometheus_metrics_dir = os.path.join(work_dir, prometheus_metrics_dir)
 if os.path.exists(prometheus_metrics_dir):
     shutil.rmtree(prometheus_metrics_dir)
 os.makedirs(prometheus_metrics_dir, exist_ok=True)
@@ -62,11 +64,21 @@ os.makedirs(prometheus_metrics_dir, exist_ok=True)
 redis_conn_type = "single"
 redis_single_url = os.environ.get("REDIS_SINGLE_URL")
 
-# 基本数据数据库配置
+# pg 基本数据数据库配置
 letsgen_db_pg_url = os.environ.get("LETSGEN_DB_PG_URL")
-# 日志数据库配置
+# pg 日志数据库配置
 letsgen_log_pg_url = os.environ.get("LETSGEN_LOG_PG_URL")
 letsgen_pg_timezone = os.environ.get("LETSGEN_PG_TIMEZONE", "UTC")
+
+# minio
+letsgen_minio_endpoint = os.environ.get("LETSGEN_MINIO_ENDPOINT")
+letsgen_minio_endpoint_secure = os.environ.get("LETSGEN_MINIO_ENDPOINT_SECURE") != "0" and \
+                                os.environ.get("LETSGEN_MINIO_ENDPOINT_SECURE").lower() != "false"
+letsgen_minio_access_key = os.environ.get("LETSGEN_MINIO_ACCESS_KEY")
+letsgen_minio_secret_key = os.environ.get("LETSGEN_MINIO_SECRET_KEY")
+letsgen_minio_bucket_name = os.environ.get("LETSGEN_MINIO_BUCKET_NAME")
+letsgen_minio_public_url = os.environ.get("LETSGEN_MINIO_PUBLIC_URL")
+letsgen_minio_internal_url = os.environ.get("LETSGEN_MINIO_INTERNAL_URL")
 
 # llm
 # 大模型 api 最大等待时间,单位毫秒

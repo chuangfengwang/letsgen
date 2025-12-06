@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warm Chat - AI Assistant</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        warm: {
+                            50: '#fdfcf8', // 暖白背景
+                            100: '#fcfaf2',
+                            200: '#f6f2e0',
+                            300: '#efe6c5',
+                            800: '#5a5445',
+                            900: '#484337',
+                        }
+                    },
+                    typography: (theme) => ({
+                        DEFAULT: {
+                            css: {
+                                color: theme('colors.gray.700'),
+                                maxWidth: '100%',
+                            },
+                        },
+                    }),
+                }
+            }
+        }
+    </script>
+    <!-- Tailwind Typography Plugin for Markdown -->
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+
+    <!-- Vue 3 -->
+    <script type="importmap">
+        {
+            "imports": {
+                "vue": "https://unpkg.com/vue@3/dist/vue.esm-browser.js"
+            }
+        }
+    </script>
+
+    <!-- Axios -->
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+    <!-- Marked (Markdown Parser) & Highlight.js -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            background-color: #fdfcf8; /* Warm white */
+            font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #e5e7eb;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #d1d5db;
+        }
+
+        .typing-cursor::after {
+            content: '▋';
+            display: inline-block;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* Loading Spinner */
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 3px solid #b45309;
+            width: 20px;
+            height: 20px;
+            -webkit-animation: spin 1s linear infinite; /* Safari */
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col text-gray-800">
+
+    <div id="app" class="flex flex-col h-full relative">
+
+        <!-- Header -->
+        <header class="flex justify-between items-center px-6 py-4 border-b border-warm-200 bg-warm-50/80 backdrop-blur-md sticky top-0 z-10">
+            <div class="flex items-center gap-3">
+                <div class="bg-gradient-to-br from-orange-400 to-amber-600 text-white rounded-lg p-2 shadow-sm">
+                    <i class="fa-solid fa-feather-pointed text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg text-warm-900 tracking-tight">WarmChat</h1>
+                    <div class="text-xs text-gray-500 flex items-center gap-2">
+                        <span>Session: <span class="font-mono bg-warm-100 px-1 rounded">{{ sessionId }}</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <button @click="showSettings = true" class="text-gray-500 hover:text-gray-800 transition p-2 rounded-full hover:bg-warm-100">
+                <i class="fa-solid fa-sliders text-lg"></i>
+            </button>
+        </header>
+
+        <!-- Chat Area -->
+        <main ref="chatContainer" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 scroll-smooth">
+
+            <!-- Welcome Screen (Empty State) -->
+            <div v-if="messages.length === 0" class="flex flex-col items-center justify-center h-full opacity-60 text-center">
+                <div class="bg-warm-100 p-6 rounded-2xl mb-4">
+                    <i class="fa-regular fa-comments text-4xl text-warm-800"></i>
+                </div>
+                <h2 class="text-2xl font-semibold text-warm-900 mb-2">开始一个新的对话</h2>
+                <p class="text-gray-500 max-w-md">支持 Markdown、代码高亮、多模态（图片/视频/音频）上传以及思维链展示。</p>
+            </div>
+
+            <!-- Messages -->
+            <div v-for="(msg, index) in messages" :key="index" class="w-full max-w-4xl mx-auto group">
+
+                <!-- User Message -->
+                <div v-if="msg.role === 'user'" class="flex justify-end mb-2">
+                    <div class="flex flex-col items-end max-w-[85%]">
+                        <!-- Attachments Display -->
+                        <div v-if="msg.attachments && msg.attachments.length > 0" class="flex flex-wrap gap-2 mb-2 justify-end">
+                            <div v-for="(file, fIndex) in msg.attachments" :key="fIndex" class="relative overflow-hidden rounded-lg border border-warm-200 shadow-sm">
+                                <img v-if="file.type === 'image'" :src="file.data" class="h-24 w-auto object-cover" />
+                                <video v-else-if="file.type === 'video'" :src="file.data" class="h-24 w-auto object-cover" controls></video>
+                                <audio v-else-if="file.type === 'audio'" :src="file.data" class="h-10 w-48 bg-white" controls></audio>
+                            </div>
+                        </div>
+
+                        <!-- Text Content -->
+                        <div class="bg-stone-100 text-gray-800 px-4 py-3 rounded-2xl rounded-tr-sm shadow-sm border border-stone-200">
+                            <!-- Raw/Preview Toggle for User (Optional, mostly raw is fine but render ensures consistency) -->
+                            <div v-html="renderMarkdown(msg.content)" class="prose prose-sm prose-stone max-w-none"></div>
+                        </div>
+                    </div>
+                    <div class="w-8 h-8 rounded-full bg-gray-200 flex-shrink-0 ml-3 flex items-center justify-center text-gray-500">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                </div>
+
+                <!-- Assistant Message -->
+                <div v-else class="flex justify-start mb-2">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-amber-600 flex-shrink-0 mr-3 flex items-center justify-center text-white shadow-sm">
+                        <i class="fa-solid fa-robot text-sm"></i>
+                    </div>
+                    <div class="flex flex-col max-w-[90%] md:max-w-[85%]">
+
+                        <!-- Reasoning/Thinking Block -->
+                        <div v-if="msg.reasoning" class="mb-3">
+                            <div @click="msg.expandReasoning = !msg.expandReasoning"
+                                 class="cursor-pointer bg-warm-100 hover:bg-warm-200 border border-warm-200 rounded-lg px-3 py-2 text-xs text-stone-600 flex items-center justify-between transition-colors w-fit min-w-[150px]">
+                                <span class="flex items-center gap-2">
+                                    <i class="fa-solid fa-brain text-amber-600"></i>
+                                    思考过程
+                                    <span v-if="msg.isThinking" class="loader !w-3 !h-3 !border-2"></span>
+                                </span>
+                                <i :class="msg.expandReasoning ? 'fa-chevron-up' : 'fa-chevron-down'" class="fa-solid ml-2 opacity-50"></i>
+                            </div>
+                            <div v-show="msg.expandReasoning" class="mt-2 pl-3 border-l-2 border-warm-300">
+                                <div class="text-sm text-gray-500 font-mono whitespace-pre-wrap leading-relaxed bg-warm-50/50 p-2 rounded">{{ msg.reasoning }}</div>
+                            </div>
+                        </div>
+
+                        <!-- Main Content Area -->
+                        <div class="relative bg-white border border-warm-200 rounded-2xl rounded-tl-sm px-5 py-4 shadow-sm hover:shadow-md transition-shadow duration-300">
+
+                            <!-- Toggle View Button -->
+                            <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button @click="msg.viewMode = msg.viewMode === 'preview' ? 'raw' : 'preview'"
+                                        class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-500 px-2 py-1 rounded">
+                                    {{ msg.viewMode === 'preview' ? 'Raw' : 'Preview' }}
+                                </button>
+                            </div>
+
+                            <!-- Content -->
+                            <div v-if="msg.viewMode === 'preview'"
+                                 class="prose prose-stone prose-sm md:prose-base max-w-none break-words"
+                                 :class="{'typing-cursor': msg.status === 'streaming'}"
+                                 v-html="renderMarkdown(msg.content || ' ')">
+                            </div>
+                            <textarea v-else
+                                      class="w-full h-full min-h-[100px] text-sm font-mono text-gray-700 bg-gray-50 p-2 rounded border-none focus:ring-0 resize-y"
+                                      readonly>{{ msg.content }}</textarea>
+                        </div>
+
+                        <!-- Metrics Footer -->
+                        <div v-if="msg.metrics" class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-gray-400 font-mono select-none">
+                            <span title="总耗时"><i class="fa-regular fa-clock"></i> {{ msg.metrics.totalTime }}s</span>
+                            <span title="首字延迟 (TTFT)"><i class="fa-solid fa-bolt"></i> TTFT: {{ msg.metrics.ttft }}ms</span>
+                            <span v-if="msg.metrics.prefillSpeed" title="Prefill 速度">In: {{ msg.metrics.prefillSpeed }}/s</span>
+                            <span v-if="msg.metrics.genSpeed" title="生成速度">Out: {{ msg.metrics.genSpeed }}/s</span>
+                            <span>Tokens: {{ msg.metrics.inputTokens }} ↑ / {{ msg.metrics.outputTokens }} ↓</span>
+                            <span v-if="msg.reasoning && msg.reasoning.length">Thinking: ~{{ Math.ceil(msg.reasoning.length / 4) }} toks</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="h-12"></div> <!-- Spacer -->
+        </main>
+
+        <!-- Input Area -->
+        <footer class="bg-white border-t border-warm-200 p-4">
+            <div class="max-w-4xl mx-auto">
+
+                <!-- File Previews -->
+                <div v-if="currentAttachments.length > 0" class="flex gap-3 mb-3 overflow-x-auto pb-2">
+                    <div v-for="(file, index) in currentAttachments" :key="index" class="relative group shrink-0">
+                        <div class="w-16 h-16 rounded-lg overflow-hidden border border-gray-200 bg-gray-50 flex items-center justify-center">
+                            <img v-if="file.type === 'image'" :src="file.data" class="w-full h-full object-cover">
+                            <i v-else-if="file.type === 'video'" class="fa-solid fa-video text-gray-400 text-xl"></i>
+                            <i v-else class="fa-solid fa-music text-gray-400 text-xl"></i>
+                        </div>
+                        <button @click="removeAttachment(index)" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow-md hover:bg-red-600">
+                            <i class="fa-solid fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Input Box -->
+                <div class="relative flex items-end gap-2 bg-warm-50 border border-warm-300 rounded-xl shadow-sm focus-within:ring-2 focus-within:ring-amber-500/20 focus-within:border-amber-500 transition-all p-2">
+
+                    <!-- File Upload Button -->
+                    <button @click="$refs.fileInput.click()" class="p-2 text-gray-400 hover:text-amber-600 transition h-10 w-10 flex items-center justify-center rounded-lg hover:bg-warm-100" title="上传图片/视频/音频">
+                        <i class="fa-solid fa-paperclip"></i>
+                    </button>
+                    <input type="file" ref="fileInput" @change="handleFileSelect" multiple accept="image/*,video/*,audio/*" class="hidden">
+
+                    <!-- Textarea -->
+                    <textarea
+                        v-model="inputMessage"
+                        @keydown.enter.exact.prevent="sendMessage"
+                        @paste="handlePaste"
+                        placeholder="输入消息... (支持粘贴图片)"
+                        rows="1"
+                        ref="textarea"
+                        style="min-height: 40px; max-height: 200px;"
+                        class="w-full bg-transparent border-none focus:ring-0 text-gray-700 resize-none py-2 px-1 max-h-48 overflow-y-auto"
+                    ></textarea>
+
+                    <!-- Send/Stop Button -->
+                    <button v-if="!isGenerating"
+                            @click="sendMessage"
+                            :disabled="!inputMessage.trim() && currentAttachments.length === 0"
+                            class="h-10 w-10 bg-amber-600 hover:bg-amber-700 disabled:bg-gray-300 text-white rounded-lg flex items-center justify-center transition-colors shadow-sm mb-[1px]">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                    <button v-else
+                            @click="stopGeneration"
+                            class="h-10 w-10 bg-gray-800 hover:bg-gray-900 text-white rounded-lg flex items-center justify-center transition-colors shadow-sm mb-[1px]">
+                        <i class="fa-solid fa-stop"></i>
+                    </button>
+                </div>
+                <div class="text-center text-xs text-gray-400 mt-2">
+                    WarmChat AI • Enter 发送 • Shift+Enter 换行
+                </div>
+            </div>
+        </footer>
+
+        <!-- Settings Modal -->
+        <div v-if="showSettings" class="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center" @click.self="showSettings = false">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 m-4 animate-fade-in">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-gray-800">设置</h3>
+                    <button @click="showSettings = false" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-times"></i></button>
+                </div>
+
+                <div class="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">API Endpoint</label>
+                        <input v-model="settings.endpoint" type="text" placeholder="https://api.openai.com/v1/chat/completions" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">API Key</label>
+                        <input v-model="settings.apiKey" type="password" placeholder="sk-..." class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Model Name</label>
+                        <input v-model="settings.model" type="text" placeholder="gpt-4o" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">System Prompt</label>
+                        <textarea v-model="settings.systemPrompt" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none resize-none"></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Temperature: {{ settings.temperature }}</label>
+                            <input v-model.number="settings.temperature" type="range" min="0" max="2" step="0.1" class="w-full accent-amber-600">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Top P: {{ settings.topP }}</label>
+                            <input v-model.number="settings.topP" type="range" min="0" max="1" step="0.1" class="w-full accent-amber-600">
+                        </div>
+                    </div>
+
+                     <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Max Tokens</label>
+                        <input v-model.number="settings.maxTokens" type="number" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:border-amber-500 outline-none">
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm font-medium text-gray-700">启用多模态 (Vision)</span>
+                        <input type="checkbox" v-model="settings.enableMultimodal" class="w-4 h-4 text-amber-600 rounded border-gray-300 focus:ring-amber-500">
+                    </div>
+                </div>
+
+                <div class="mt-6 flex justify-end">
+                    <button @click="showSettings = false" class="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 transition">保存</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script type="module">
+        import { createApp, ref, reactive, onMounted, nextTick, watch } from 'vue';
+
+        createApp({
+            setup() {
+                // --- State ---
+                const sessionId = ref('');
+                const inputMessage = ref('');
+                const isGenerating = ref(false);
+                const showSettings = ref(false);
+                const chatContainer = ref(null);
+                const textarea = ref(null);
+                const fileInput = ref(null);
+                const abortController = ref(null);
+
+                const messages = ref([]);
+                const currentAttachments = ref([]);
+
+                const settings = reactive({
+                    endpoint: 'https://api.openai.com/v1/chat/completions',
+                    apiKey: '', // 用户需填入
+                    model: 'gpt-4o',
+                    systemPrompt: 'You are a helpful assistant. Use markdown for formatting.',
+                    temperature: 0.7,
+                    topP: 1.0,
+                    maxTokens: 4096,
+                    enableMultimodal: true
+                });
+
+                // --- Initialization ---
+                onMounted(() => {
+                    // Session Management
+                    const params = new URLSearchParams(window.location.search);
+                    let sid = params.get('session');
+                    if (!sid) {
+                        sid = Math.random().toString(36).substring(2, 10);
+                        const newUrl = `${window.location.pathname}?session=${sid}`;
+                        window.history.replaceState({}, '', newUrl);
+                    }
+                    sessionId.value = sid;
+
+                    // Load settings from localStorage
+                    const savedSettings = localStorage.getItem('warmchat_settings');
+                    if (savedSettings) {
+                        Object.assign(settings, JSON.parse(savedSettings));
+                    }
+
+                    // Auto resize textarea
+                    watch(inputMessage, () => {
+                        nextTick(() => {
+                            if(textarea.value) {
+                                textarea.value.style.height = 'auto';
+                                textarea.value.style.height = textarea.value.scrollHeight + 'px';
+                            }
+                        });
+                    });
+                });
+
+                // Save settings on change
+                watch(settings, (newVal) => {
+                    localStorage.setItem('warmchat_settings', JSON.stringify(newVal));
+                }, { deep: true });
+
+                // --- Helpers ---
+                const scrollToBottom = () => {
+                    nextTick(() => {
+                        if (chatContainer.value) {
+                            chatContainer.value.scrollTop = chatContainer.value.scrollHeight;
+                        }
+                    });
+                };
+
+                const renderMarkdown = (text) => {
+                    // Configure marked to use highlight.js
+                    marked.setOptions({
+                        highlight: function(code, lang) {
+                            const language = highlight.getLanguage(lang) ? lang : 'plaintext';
+                            return highlight.highlight(code, { language }).value;
+                        },
+                        langPrefix: 'hljs language-',
+                        breaks: true // convert \n to <br>
+                    });
+                    return marked.parse(text || '');
+                };
+
+                const fileToBase64 = (file) => {
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.readAsDataURL(file);
+                        reader.onload = () => resolve(reader.result);
+                        reader.onerror = error => reject(error);
+                    });
+                };
+
+                // --- Handlers ---
+                const handleFileSelect = async (event) => {
+                    const files = event.target.files;
+                    if (!files.length) return;
+                    processFiles(files);
+                    event.target.value = ''; // Reset input
+                };
+
+                const handlePaste = (event) => {
+                    const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+                    const files = [];
+                    for (let index in items) {
+                        const item = items[index];
+                        if (item.kind === 'file') {
+                            files.push(item.getAsFile());
+                        }
+                    }
+                    if (files.length > 0) {
+                        processFiles(files);
+                    }
+                };
+
+                const processFiles = async (files) => {
+                    for (let file of files) {
+                        try {
+                            const base64 = await fileToBase64(file);
+                            let type = 'text'; // Fallback
+                            if (file.type.startsWith('image/')) type = 'image_url';
+                            else if (file.type.startsWith('video/')) type = 'video';
+                            else if (file.type.startsWith('audio/')) type = 'audio';
+
+                            currentAttachments.value.push({
+                                type: type,
+                                data: base64, // Full data URI
+                                fileObj: file
+                            });
+                        } catch (e) {
+                            console.error("File processing failed", e);
+                        }
+                    }
+                };
+
+                const removeAttachment = (index) => {
+                    currentAttachments.value.splice(index, 1);
+                };
+
+                const stopGeneration = () => {
+                    if (abortController.value) {
+                        abortController.value.abort();
+                        abortController.value = null;
+                        isGenerating.value = false;
+
+                        // Set status of last message
+                        const lastMsg = messages.value[messages.value.length - 1];
+                        if (lastMsg && lastMsg.role === 'assistant') {
+                            lastMsg.status = 'stopped';
+                        }
+                    }
+                };
+
+                // --- Core Sending Logic ---
+                const sendMessage = async () => {
+                    if ((!inputMessage.value.trim() && currentAttachments.value.length === 0) || isGenerating.value) return;
+
+                    if (!settings.apiKey) {
+                        alert('请先在设置中配置 API Key');
+                        showSettings.value = true;
+                        return;
+                    }
+
+                    // 1. Construct User Message Object
+                    const userContentDisplay = inputMessage.value;
+                    const userAttachments = [...currentAttachments.value];
+
+                    messages.value.push({
+                        role: 'user',
+                        content: userContentDisplay,
+                        attachments: userAttachments,
+                        viewMode: 'preview'
+                    });
+
+                    // 2. Prepare Payload for API
+                    // OpenAI Multimodal format compliance
+                    let apiContent = [];
+
+                    // Add attachments first
+                    userAttachments.forEach(att => {
+                        apiContent.push({
+                            type: att.type,
+                            [att.type === 'text' ? 'text' : 'data']: att.type === 'text' ? '' : att.data,
+                            // If prompt implies specific keys for custom backend:
+                            type: att.type
+                        });
+                        // Add 'text' field for text type if needed by backend, usually mixed content works differently.
+                        // Let's assume the backend handles the custom format described in prompt requirement #4.
+                    });
+
+                    // Add text
+                    if (inputMessage.value.trim()) {
+                        apiContent.push({
+                            type: 'text',
+                            text: inputMessage.value
+                        });
+                    }
+
+                    const payloadMessages = [
+                        { role: 'system', content: settings.systemPrompt },
+                        ...messages.value.slice(0, -1).map(m => {
+                            // Historical messages simplified for context window (omitting images for history to save tokens/complexity in this demo)
+                            return { role: m.role, content: m.content };
+                        }),
+                        { role: 'user', content: apiContent } // Current message with structure
+                    ];
+
+                    // Clear Input
+                    inputMessage.value = '';
+                    currentAttachments.value = [];
+                    textarea.value.style.height = 'auto';
+
+                    // 3. Create Assistant Message Placeholder
+                    const assistantMsg = reactive({
+                        role: 'assistant',
+                        content: '',
+                        reasoning: '',
+                        isThinking: true,
+                        expandReasoning: true, // Auto expand if reasoning exists
+                        status: 'streaming',
+                        viewMode: 'preview',
+                        metrics: {
+                            startTime: performance.now(),
+                            ttft: 0,
+                            totalTime: 0,
+                            prefillSpeed: 0,
+                            genSpeed: 0,
+                            inputTokens: 0,
+                            outputTokens: 0
+                        }
+                    });
+                    messages.value.push(assistantMsg);
+                    scrollToBottom();
+                    isGenerating.value = true;
+
+                    // 4. SSE Request
+                    abortController.value = new AbortController();
+
+                    try {
+                        const response = await fetch(settings.endpoint, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${settings.apiKey}`
+                            },
+                            body: JSON.stringify({
+                                model: settings.model,
+                                messages: payloadMessages,
+                                stream: true,
+                                temperature: settings.temperature,
+                                top_p: settings.topP,
+                                max_tokens: settings.maxTokens
+                            }),
+                            signal: abortController.value.signal
+                        });
+
+                        if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+
+                        const reader = response.body.getReader();
+                        const decoder = new TextDecoder();
+                        let buffer = '';
+                        let firstTokenReceived = false;
+                        let tokenCount = 0; // Simple counter approximation
+
+                        while (true) {
+                            const { done, value } = await reader.read();
+                            if (done) break;
+
+                            buffer += decoder.decode(value, { stream: true });
+                            const lines = buffer.split('\n');
+                            buffer = lines.pop(); // Keep incomplete line
+
+                            for (const line of lines) {
+                                if (line.trim() === '') continue;
+                                if (line.trim() === 'data: [DONE]') continue;
+                                if (!line.startsWith('data: ')) continue;
+
+                                const jsonStr = line.replace('data: ', '');
+                                try {
+                                    const data = JSON.parse(jsonStr);
+
+                                    // Handle Metrics from Usage (if available in stream options like stream_options: {"include_usage": true})
+                                    if (data.usage) {
+                                        assistantMsg.metrics.inputTokens = data.usage.prompt_tokens;
+                                        assistantMsg.metrics.outputTokens = data.usage.completion_tokens;
+                                        // Calculate speeds
+                                        const now = performance.now();
+                                        const durationSec = (now - assistantMsg.metrics.startTime) / 1000;
+                                        assistantMsg.metrics.genSpeed = (data.usage.completion_tokens / durationSec).toFixed(1);
+                                    }
+
+                                    const delta = data.choices?.[0]?.delta;
+                                    if (!delta) continue;
+
+                                    // TTFT Logic
+                                    if (!firstTokenReceived) {
+                                        assistantMsg.metrics.ttft = (performance.now() - assistantMsg.metrics.startTime).toFixed(0);
+                                        firstTokenReceived = true;
+                                    }
+
+                                    // Reasoning handling (DeepSeek style or standard)
+                                    const reasoningChunk = delta.reasoning_content || delta.reasoning;
+                                    if (reasoningChunk) {
+                                        assistantMsg.reasoning += reasoningChunk;
+                                        tokenCount++; // Approx
+                                    }
+
+                                    // Content handling
+                                    if (delta.content) {
+                                        // If we switched from reasoning to content, stop thinking indicator
+                                        if (assistantMsg.isThinking && assistantMsg.content.length === 0 && assistantMsg.reasoning.length > 0) {
+                                            assistantMsg.isThinking = false;
+                                            assistantMsg.expandReasoning = false; // Collapse thinking
+                                        }
+                                        assistantMsg.content += delta.content;
+                                        tokenCount++;
+                                        scrollToBottom();
+                                    }
+
+                                } catch (e) {
+                                    console.warn('Parse error', e);
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        if (error.name === 'AbortError') {
+                            assistantMsg.content += '\n\n[生成已停止]';
+                        } else {
+                            assistantMsg.content += `\n\n[错误: ${error.message}]`;
+                        }
+                    } finally {
+                        isGenerating.value = false;
+                        assistantMsg.status = 'completed';
+                        assistantMsg.isThinking = false;
+                        assistantMsg.metrics.totalTime = ((performance.now() - assistantMsg.metrics.startTime) / 1000).toFixed(2);
+
+                        // Fallback estimation if usage not provided
+                        if (assistantMsg.metrics.outputTokens === 0) {
+                             assistantMsg.metrics.outputTokens = tokenCount;
+                             assistantMsg.metrics.genSpeed = (tokenCount / parseFloat(assistantMsg.metrics.totalTime)).toFixed(1);
+                        }
+
+                        scrollToBottom();
+                        abortController.value = null;
+                    }
+                };
+
+                return {
+                    sessionId,
+                    messages,
+                    inputMessage,
+                    currentAttachments,
+                    settings,
+                    showSettings,
+                    isGenerating,
+                    chatContainer,
+                    textarea,
+                    fileInput,
+                    handleFileSelect,
+                    handlePaste,
+                    sendMessage,
+                    stopGeneration,
+                    removeAttachment,
+                    renderMarkdown
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
