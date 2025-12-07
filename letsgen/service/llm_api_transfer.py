@@ -59,8 +59,12 @@ class LlmTransferService:
         """解析 usage"""
         raise NotImplementedError()
 
-    async def db_log_request(self, context: LlmRequestContext):
-        """请求记录入库"""
+    async def db_stat_request(self, context: LlmRequestContext):
+        """请求记录统计入库"""
+        raise NotImplementedError()
+
+    async def db_log_request_content(self, context: LlmRequestContext):
+        """请求内容入库"""
         raise NotImplementedError()
 
     async def after_call_backend(self, context: LlmRequestContext):
@@ -72,7 +76,7 @@ class LlmTransferService:
         context.request_cost = await self.update_cost(context)
         context.mark_event_dt("cost_calculated")
 
-        await self.db_log_request(context)
+        await self.db_stat_request(context)
         context.mark_event_dt("db_log_end")
 
     async def run(self, context: LlmRequestContext):
@@ -111,7 +115,4 @@ class LlmTransferService:
         end_response = self.transfer_response(response)
         context.end_response = end_response
         context.mark_event_dt("transfer_response_end")
-        # todo: 异步
-        if not is_stream:
-            await self.after_call_backend(context)
         return end_response

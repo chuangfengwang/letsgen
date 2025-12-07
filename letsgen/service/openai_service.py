@@ -19,6 +19,7 @@ from openai import AsyncOpenAI, AsyncStream
 from openai.types import CompletionUsage
 from openai.types.chat import ChatCompletionChunk, ChatCompletion
 
+import config
 import letsgen.db.pg_log_dao as pg_log_dao
 from letsgen.db.pg_log_entity_auto import LlmApiModelCallStat
 from letsgen.entity.llm_entity import LlmRequestContext
@@ -31,8 +32,9 @@ from utils import password_util
 logger = logging.getLogger(__name__)
 
 
-class OpenAiService(LlmTransferService):
-    """OpenAI 服务类"""
+# openai chat completions 接口
+class OpenAiChatCompletionsService(LlmTransferService):
+    """OpenAI chat completions 服务类"""
 
     def __init__(self):
         self._client = {}
@@ -44,7 +46,7 @@ class OpenAiService(LlmTransferService):
             "volcengine": ("https://ark.cn-beijing.volces.com/api/v3", os.environ.get("VOLCENGINE_API_KEY")),
             "zhipu": ("https://open.bigmodel.cn/api/paas/v4", os.environ.get("ZHIPU_API_KEY")),
         }
-        with open("volc_model_mapping.json", "r") as f:
+        with open(os.path.join(config.cur_dir, "volc_model_mapping.json"), "r") as f:
             self.mock_model_mapping = json.load(f)
 
     def _get_openai_chat_completion_params(self) -> List[str]:
@@ -265,7 +267,7 @@ class OpenAiService(LlmTransferService):
             usage = response.usage if hasattr(response, "usage") and response.usage is not None else {}
         return usage
 
-    async def db_log_request(self, context: LlmRequestContext):
+    async def db_stat_request(self, context: LlmRequestContext):
         """请求记录入库"""
         try:
             request_in_dt = context.get_event_dt("request_in")

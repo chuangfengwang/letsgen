@@ -62,7 +62,7 @@ async def test_download_file(async_fetch_connection):
         client,
         config.letsgen_minio_bucket_name,
         "example/hello.txt",
-        os.path.join(config.work_dir, "tmp", "downloaded_hello.txt")
+        os.path.join(config.cur_dir, "tmp", "downloaded_hello.txt")
     )
     print()
     print("Download file test completed.")
@@ -75,7 +75,7 @@ async def test_upload_large_file(async_fetch_connection):
         client,
         config.letsgen_minio_bucket_name,
         "example/large_file.html",
-        os.path.join(config.work_dir, "../gateway-ui/demo-chat-4.html")
+        os.path.join(config.project_dir, "gateway-ui/demo-chat-4.html")
     )
     print()
     print("Upload large file test completed.")

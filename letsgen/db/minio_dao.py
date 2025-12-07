@@ -37,6 +37,15 @@ async def get_minio_client() -> Minio:
     return minio_client
 
 
+async def close_minio_client():
+    """关闭 minio 客户端连接"""
+    global minio_client
+    if minio_client is not None:
+        await minio_client.close_session()
+        minio_client = None
+        logger.info("S3 client connection closed.")
+
+
 async def check_and_make_bucket(client: Minio, bucket_name: str):
     """检查存储桶是否存在, 不存在则创建"""
     # 检查存储桶是否存在

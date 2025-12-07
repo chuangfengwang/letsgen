@@ -102,8 +102,8 @@ class RequestResponseLogger:
             "path": scope["path"],
             "client_ip": client_ip,
             "query_param": dict(scope.get("query_string", {})),
-            "headers": {k: v for k, v in headers.items() if k.upper().startswith('X-')},
-            "body": body_param,
+            "headers": {k: v for k, v in headers.items() if k.upper().startswith('X-') or k.lower() == 'qtraceid'},
+            # "body": body_param,
         }
         logger.info(f"Incoming Request. log_data: {json.dumps(log_data, ensure_ascii=False)}")
 

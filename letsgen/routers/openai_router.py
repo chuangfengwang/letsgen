@@ -19,7 +19,7 @@ from watchfiles import awatch
 import letsgen.dependencies.auth as auth
 from letsgen.entity.llm_entity import LlmRequestContext
 from letsgen.service.llm_api_transfer import LlmTransferService
-from letsgen.service.openai_service import OpenAiService
+from letsgen.service.openai_service import OpenAiChatCompletionsService
 from utils.chunk_response import SseChunkStreamingResponse
 
 # router = APIRouter(prefix="/api/openai/v1", tags=["openai"])
@@ -31,7 +31,7 @@ openai_app.add_middleware(
     allow_headers=["*"],
 )
 
-llmTransferService: LlmTransferService = OpenAiService()
+llmTransferService: LlmTransferService = OpenAiChatCompletionsService()
 
 
 @openai_app.post(

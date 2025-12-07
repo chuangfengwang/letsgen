@@ -34,31 +34,32 @@ timeout_keep_alive = 5
 expose_api_doc = True if debug_flag else False
 use_self_hosted_doc_src = True
 
-# 服务工作目录
-work_dir = os.path.dirname(os.path.abspath(__file__))
+# 获取当前脚本目录的父目录, 作为服务工作目录
+# cur_dir = os.getcwd()  # 以安装包启动时使用
+cur_dir = project_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 
 # 日志
-logs_dir = os.path.join(work_dir, "../logs")
+logs_dir = os.path.join(cur_dir, "logs")
 os.makedirs(logs_dir, exist_ok=True)
 info_logfile = os.path.join(logs_dir, "info.log")
 warn_logfile = os.path.join(logs_dir, "warn.log")
 error_logfile = os.path.join(logs_dir, "error.log")
 data_logfile = os.path.join(logs_dir, "data-warehouse.log")
 
-# UI 静态文件目录
-fastapi_static_dir = os.path.join(work_dir, "../static-fastapi")
-ui_static_dir = os.path.join(work_dir, "../static-ui")
-
 # prometheus 多进程指标目录
 prometheus_metrics_dir = os.environ.get("PROMETHEUS_MULTIPROC_DIR")
 if not prometheus_metrics_dir:
     prometheus_metrics_dir = '/tmp/letsgen_prometheus_metrics'
-    os.environ['PROMETHEUS_MULTIPROC_DIR'] = prometheus_metrics_dir
 if not prometheus_metrics_dir.startswith("/"):
-    prometheus_metrics_dir = os.path.join(work_dir, prometheus_metrics_dir)
+    prometheus_metrics_dir = os.path.join(cur_dir, prometheus_metrics_dir)
 if os.path.exists(prometheus_metrics_dir):
     shutil.rmtree(prometheus_metrics_dir)
 os.makedirs(prometheus_metrics_dir, exist_ok=True)
+os.environ['PROMETHEUS_MULTIPROC_DIR'] = prometheus_metrics_dir
+
+# UI 静态文件目录
+fastapi_static_dir = os.path.join(project_dir, "static-fastapi")
+ui_static_dir = os.path.join(project_dir, "static-ui")
 
 # redis
 redis_conn_type = "single"
@@ -72,8 +73,7 @@ letsgen_pg_timezone = os.environ.get("LETSGEN_PG_TIMEZONE", "UTC")
 
 # minio
 letsgen_minio_endpoint = os.environ.get("LETSGEN_MINIO_ENDPOINT")
-letsgen_minio_endpoint_secure = os.environ.get("LETSGEN_MINIO_ENDPOINT_SECURE") != "0" and \
-                                os.environ.get("LETSGEN_MINIO_ENDPOINT_SECURE").lower() != "false"
+letsgen_minio_endpoint_secure = os.environ.get("LETSGEN_MINIO_ENDPOINT_SECURE").lower() != "false"
 letsgen_minio_access_key = os.environ.get("LETSGEN_MINIO_ACCESS_KEY")
 letsgen_minio_secret_key = os.environ.get("LETSGEN_MINIO_SECRET_KEY")
 letsgen_minio_bucket_name = os.environ.get("LETSGEN_MINIO_BUCKET_NAME")
