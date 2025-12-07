@@ -519,33 +519,38 @@
                     // OpenAI Multimodal format compliance
                     let apiContent = [];
 
-                    // Add attachments first
+                    // 附件处理
                     userAttachments.forEach(att => {
-                        apiContent.push({
-                            type: att.type,
-                            [att.type === 'text' ? 'text' : 'data']: att.type === 'text' ? '' : att.data,
-                            // If prompt implies specific keys for custom backend:
-                            type: att.type
-                        });
-                        // Add 'text' field for text type if needed by backend, usually mixed content works differently.
-                        // Let's assume the backend handles the custom format described in prompt requirement #4.
+                        if (att.type === 'image_url') {
+                            apiContent.push({
+                                type: 'image_url',
+                                image_url: { url: att.data }
+                            });
+                        } else if (att.type === 'video' || att.type === 'audio') {
+                            // 其他多模态类型可按需扩展
+                            apiContent.push({
+                                type: att.type,
+                                data: att.data
+                            });
+                        }
                     });
 
-                    // Add text
+                    // 文本内容
                     if (inputMessage.value.trim()) {
-                        apiContent.push({
+                        apiContent.unshift({
                             type: 'text',
                             text: inputMessage.value
                         });
                     }
 
+                    // payloadMessages 构造
                     const payloadMessages = [
                         { role: 'system', content: settings.systemPrompt },
-                        ...messages.value.slice(0, -1).map(m => {
-                            // Historical messages simplified for context window (omitting images for history to save tokens/complexity in this demo)
-                            return { role: m.role, content: m.content };
-                        }),
-                        { role: 'user', content: apiContent } // Current message with structure
+                        ...messages.value.slice(0, -1).map(m => ({
+                            role: m.role,
+                            content: m.content
+                        })),
+                        { role: 'user', content: apiContent }
                     ];
 
                     // Clear Input
