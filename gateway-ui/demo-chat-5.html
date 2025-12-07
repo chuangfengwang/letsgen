@@ -516,7 +516,7 @@
                     // Add attachments
                     attachments.value.forEach(att => {
                         if (att.type.startsWith('image')) {
-                            currentContent.push({ type: 'image', data: att.data }); // Note: OpenAI standard is usually { type: "image_url", image_url: { url: ... } }, but respecting prompt request format
+                            currentContent.push({ type: 'image_url', image_url: {url: att.data}}); // Note: OpenAI standard is usually { type: "image_url", image_url: { url: ... } }, but respecting prompt request format
                         } else if (att.type.startsWith('video')) {
                             currentContent.push({ type: 'video', data: att.data });
                         } else {
