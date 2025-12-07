@@ -148,7 +148,7 @@
                         <!-- Attachments Display -->
                         <div v-if="msg.attachments && msg.attachments.length > 0" class="flex flex-wrap gap-2 mb-2 justify-end">
                             <div v-for="(file, fIndex) in msg.attachments" :key="fIndex" class="relative overflow-hidden rounded-lg border border-warm-200 shadow-sm">
-                                <img v-if="file.type === 'image'" :src="file.data" class="h-24 w-auto object-cover" />
+                                <img v-if="file.type === 'image_url'" :src="file.data" class="h-24 w-auto object-cover" />
                                 <video v-else-if="file.type === 'video'" :src="file.data" class="h-24 w-auto object-cover" controls></video>
                                 <audio v-else-if="file.type === 'audio'" :src="file.data" class="h-10 w-48 bg-white" controls></audio>
                             </div>
@@ -234,7 +234,7 @@
                 <div v-if="currentAttachments.length > 0" class="flex gap-3 mb-3 overflow-x-auto pb-2">
                     <div v-for="(file, index) in currentAttachments" :key="index" class="relative group shrink-0">
                         <div class="w-16 h-16 rounded-lg overflow-hidden border border-gray-200 bg-gray-50 flex items-center justify-center">
-                            <img v-if="file.type === 'image'" :src="file.data" class="w-full h-full object-cover">
+                            <img v-if="file.type === 'image_url'" :src="file.data" class="w-full h-full object-cover">
                             <i v-else-if="file.type === 'video'" class="fa-solid fa-video text-gray-400 text-xl"></i>
                             <i v-else class="fa-solid fa-music text-gray-400 text-xl"></i>
                         </div>
