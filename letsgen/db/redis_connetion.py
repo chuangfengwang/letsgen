@@ -14,7 +14,12 @@ def async_single_conn(redis_url: str):
         redis_url,
         encoding="utf8",
         decode_responses=True,  # 可选：让返回值自动解码为字符串
-        socket_timeout=5  # 可选：设置连接超时时间
+        socket_timeout=5,  # socket 读写超时时间（秒）
+        socket_connect_timeout=5,  # socket 连接超时时间（秒）
+        socket_keepalive=True,  # 启用 TCP keepalive
+        socket_keepalive_options={},  # 使用系统默认的 keepalive 配置
+        retry_on_timeout=True,  # 超时时自动重试
+        health_check_interval=30,  # 健康检查间隔（秒）
     )
     return redis_conn
 

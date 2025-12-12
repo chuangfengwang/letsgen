@@ -15,7 +15,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 import letsgen.db.pg_db_dao as pg_db_dao
 import letsgen.exceptions.error_class as error_class
 import letsgen.utils.password_util as password_util
-from entity.auth_entity import Identity
+from letsgen.entity.auth_entity import Identity
 from letsgen.db.pg_db_entity_auto import (LetsgenUser, LetsgenProviderCredential, LetsgenProviderEndpoint,
                                           LetsgenModelEndpointRlt, )
 from letsgen.entity.ui_admin_router_entity import FirstAdminUser, CredentialForm, EndpointForm, AddEndpointForModelForm

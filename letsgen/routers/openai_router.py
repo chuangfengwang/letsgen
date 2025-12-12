@@ -20,7 +20,7 @@ import letsgen.dependencies.auth as auth
 from letsgen.entity.llm_entity import LlmRequestContext
 from letsgen.service.llm_api_transfer import LlmTransferService
 from letsgen.service.openai_service import OpenAiChatCompletionsService
-from utils.chunk_response import SseChunkStreamingResponse
+from letsgen.utils.chunk_response import SseChunkStreamingResponse
 
 # router = APIRouter(prefix="/api/openai/v1", tags=["openai"])
 openai_app = FastAPI()
@@ -48,12 +48,13 @@ async def chat_completions(
     """
     context = cast(LlmRequestContext, request.state.context)
     provider_resp = await llmTransferService.run(context)
-
+    # 消息返回后执行后续计费和日志存档任务
+    background_tasks.add_task(llmTransferService.after_call_backend, context)
+    # 按是否流式组织响应
     if context.is_stream:
         # EventSourceResponse
         return SseChunkStreamingResponse(
             llmTransferService.stream_generator(provider_resp, request.state.context),
-            on_complete=lambda: llmTransferService.after_call_backend(context),
             media_type="text/event-stream",
             headers={
                 "Cache-Control": "no-cache",

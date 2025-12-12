@@ -22,8 +22,8 @@ import letsgen.routers.sys_router as sys_router
 import letsgen.routers.ui_admin_router as ui_admin_router
 import letsgen.routers.ui_normal_router as ui_normal_router
 import letsgen.routers.ui_sys_router as ui_sys_router
-from system.exception_handler import add_global_exception_handler
-from system.make_config_app import make_app
+from letsgen.system.exception_handler import add_global_exception_handler
+from letsgen.system.make_config_app import make_app
 
 # logging.config.dictConfig(concurrent_log.UVICORN_LOGGING_CONFIG)
 
@@ -45,8 +45,6 @@ app.include_router(api_sys_router.router)
 app.include_router(ui_admin_router.router)
 app.include_router(ui_normal_router.router)
 app.include_router(ui_sys_router.router)
-# api 相关的系统状态接口
-app.include_router(api_sys_router.router)
 
 # openai 兼容接口
 app.mount("/api/openai/v1", openai_router.openai_app)

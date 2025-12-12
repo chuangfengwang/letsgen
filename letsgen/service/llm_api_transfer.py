@@ -70,14 +70,18 @@ class LlmTransferService:
     async def after_call_backend(self, context: LlmRequestContext):
         """接口调用完成后的后台任务"""
         model_id, is_stream = self.parse_model_and_stream(context.origin_body_param)
+        # 计费
         usage = self.parse_usage(context)
         context.usage = usage
         context.price = await self.fetch_price(model_id)
         context.request_cost = await self.update_cost(context)
-        context.mark_event_dt("cost_calculated")
-
+        context.mark_event_dt("update_cost_end")
+        # 用量统计
         await self.db_stat_request(context)
-        context.mark_event_dt("db_log_end")
+        context.mark_event_dt("db_stat_request_end")
+        # 调用记录存档
+        await self.db_log_request_content(context)
+        context.mark_event_dt("db_log_request_content_end")
 
     async def run(self, context: LlmRequestContext):
         """执行调用流程"""

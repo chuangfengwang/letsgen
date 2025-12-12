@@ -30,6 +30,7 @@ def test_mime_parse():
     ]
     print()
     for mime_type in mime_type_list:
-        object_name = log_content_service.build_object_name(mime_type, "I")
+        extension = log_content_service.parse_mime_file_extension(mime_type)
+        object_name = log_content_service.generate_object_name(extension, "I")
         extension = mimetypes.guess_extension(mime_type, strict=True) if mime_type else ''
         print(f"MIME Type: {mime_type} => Object Name: {object_name}. guess_extension: {extension}")

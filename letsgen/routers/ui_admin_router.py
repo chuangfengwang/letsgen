@@ -13,7 +13,7 @@ import letsgen.dependencies.auth as auth
 import letsgen.entity.ui_common_entity as ui_entity
 import letsgen.service.ui_admin_service as ui_admin_service
 import letsgen.service.ui_normal_service as ui_normal_service
-from entity.auth_entity import Identity
+from letsgen.entity.auth_entity import Identity
 from letsgen.entity.ui_admin_router_entity import FirstAdminUser, UserForm, EndpointForm, CredentialForm, \
     AddEndpointForModelForm
 

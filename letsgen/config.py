@@ -79,6 +79,12 @@ letsgen_minio_secret_key = os.environ.get("LETSGEN_MINIO_SECRET_KEY")
 letsgen_minio_bucket_name = os.environ.get("LETSGEN_MINIO_BUCKET_NAME")
 letsgen_minio_public_url = os.environ.get("LETSGEN_MINIO_PUBLIC_URL")
 letsgen_minio_internal_url = os.environ.get("LETSGEN_MINIO_INTERNAL_URL")
+# S3 对象前缀
+letsgen_minio_object_prefix = os.environ.get("LETSGEN_MINIO_OBJECT_PREFIX", "")
+# 公网 url 过期时间, 单位: 秒
+letsgen_minio_public_expire = int(os.environ.get("LETSGEN_MINIO_PUBLIC_EXPIRE", "86400"))  # 默认 1 天
+# 内网 url 过期时间, 单位: 秒
+letsgen_minio_internal_expire = int(os.environ.get("LETSGEN_MINIO_INTERNAL_EXPIRE", "315532800"))  # 默认 10 年
 
 # llm
 # 大模型 api 最大等待时间,单位毫秒

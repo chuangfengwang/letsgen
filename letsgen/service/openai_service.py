@@ -19,7 +19,7 @@ from openai import AsyncOpenAI, AsyncStream
 from openai.types import CompletionUsage
 from openai.types.chat import ChatCompletionChunk, ChatCompletion
 
-import config
+import letsgen.config as config
 import letsgen.db.pg_log_dao as pg_log_dao
 from letsgen.db.pg_log_entity_auto import LlmApiModelCallStat
 from letsgen.entity.llm_entity import LlmRequestContext
@@ -27,7 +27,7 @@ from letsgen.exceptions import error_class
 from letsgen.service.llm_api_transfer import LlmTransferService
 from letsgen.utils.function_util import all_param_expect_kwargs
 import letsgen.db.pg_db_dao as pg_db_dao
-from utils import password_util
+from letsgen.utils import password_util
 
 logger = logging.getLogger(__name__)
 
@@ -314,3 +314,7 @@ class OpenAiChatCompletionsService(LlmTransferService):
             logger.error(f"OpenAiService db_log_request error. "
                          f"letsgen_req_id: {context.letsgen_req_id}, qtraceid: {context.trace_id}, "
                          f"context.usage: {context.usage}", exc_info=True)
+
+    async def db_log_request_content(self, context: LlmRequestContext):
+        """请求内容入库"""
+        ...

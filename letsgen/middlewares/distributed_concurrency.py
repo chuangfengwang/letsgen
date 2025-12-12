@@ -74,7 +74,12 @@ class DistributeCurrencyCounter:
                 await self.redis_conn.zremrangebyscore(
                     DistributeCurrencyCounter.HEARTBEAT_KEY, "-inf", now)
                 logger.info(f"{self.__class__.__name__} update heartbeat. instance_id: {self.instance_id}")
+            except asyncio.CancelledError:
+                # 任务被取消时，重新抛出 CancelledError，让任务正常退出
+                logger.info(f"heartbeat task cancelled. instance_id: {self.instance_id}")
+                raise
             except Exception as e:
+                # 只捕获普通异常，不捕获 CancelledError
                 logger.error(f"heartbeat update failed. error=", exc_info=True)
             await asyncio.sleep(max(self.instance_ttl / 1000 / 2 - 0.5, 0))  # 半TTL刷新一次
 

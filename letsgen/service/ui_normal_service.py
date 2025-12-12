@@ -11,7 +11,7 @@ import logging
 
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
-import config
+import letsgen.config as config
 import letsgen.db.pg_db_dao as pg_db_dao
 import letsgen.exceptions.error_class as error_class
 import letsgen.utils.password_util as password_util

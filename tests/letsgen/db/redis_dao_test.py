@@ -17,6 +17,7 @@ def get_sync_redis_conn_test():
 async def get_async_redis_conn_test():
     conn = get_async_redis_conn()
     await conn.set("key-wcf", "asyncTestValue")
+    await conn.zadd("key-wcf-zset", {"member1": 1, "member2": 2})
     await conn.aclose()
 
 
