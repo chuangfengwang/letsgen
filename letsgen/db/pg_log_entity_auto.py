@@ -8,10 +8,10 @@ class LlmApiModelCallStat(SQLModel, table=True):
     __tablename__ = 'llm_api_model_call_stat'
     __table_args__ = (
         PrimaryKeyConstraint('id', 'call_time_hour', name='llm_api_model_call_stat_pkey'),
-        UniqueConstraint('account_name', 'model_name', 'call_time_hour', name='uq_llm_api_model_call_stat'),
+        UniqueConstraint('account_name', 'model_id', 'call_time_hour', name='uq_llm_api_model_call_stat'),
         Index('idx_llm_api_model_call_stat_account_name', 'account_name'),
         Index('idx_llm_api_model_call_stat_call_time_hour', 'call_time_hour'),
-        Index('idx_llm_api_model_call_stat_model_name', 'model_name'),
+        Index('idx_llm_api_model_call_stat_model_id', 'model_id'),
         Index('idx_llm_api_model_call_stat_period_last_call_at', 'period_last_call_at'),
         Index('llm_api_model_call_stat_call_time_hour_idx', 'call_time_hour'),
         {'comment': 'llm模型调用统计表'}
@@ -19,7 +19,7 @@ class LlmApiModelCallStat(SQLModel, table=True):
 
     id: int = Field(sa_column=Column('id', BigInteger, primary_key=True, autoincrement=True, comment='主键'))
     account_name: str = Field(sa_column=Column('account_name', String(50), nullable=False, server_default=text("''::character varying"), comment='计费账号名'))
-    model_name: str = Field(sa_column=Column('model_name', String(50), nullable=False, server_default=text("''::character varying"), comment='模型名称'))
+    model_id: str = Field(sa_column=Column('model_id', String(50), nullable=False, server_default=text("''::character varying"), comment='模型名称'))
     call_time_hour: datetime.datetime = Field(sa_column=Column('call_time_hour', DateTime(True), primary_key=True, server_default=text("'2000-01-01 08:00:00+08'::timestamp with time zone"), comment='调用发起时间对应的开始小时'))
     period_last_call_at: datetime.datetime = Field(sa_column=Column('period_last_call_at', DateTime(True), nullable=False, server_default=text("'2000-01-01 08:00:00+08'::timestamp with time zone"), comment='统计周期内最后一次完成调用的时间'))
     call_num: int = Field(sa_column=Column('call_num', Integer, nullable=False, server_default=text('0'), comment='统计周期内调用次数'))
@@ -43,7 +43,9 @@ class LlmApiRequestBodyLog(SQLModel, table=True):
     id: int = Field(sa_column=Column('id', BigInteger, primary_key=True, comment='主键'))
     log_time: datetime.datetime = Field(sa_column=Column('log_time', DateTime(True), primary_key=True, server_default=text('now()'), comment='入库记录时间'))
     account_name: str = Field(sa_column=Column('account_name', String(50), nullable=False, server_default=text("''::character varying"), comment='账号名'))
-    model_name: str = Field(sa_column=Column('model_name', String(50), nullable=False, server_default=text("''::character varying"), comment='模型名'))
+    model_id: str = Field(sa_column=Column('model_id', String(50), nullable=False, server_default=text("''::character varying"), comment='模型名'))
+    gen_api_path: str = Field(sa_column=Column('gen_api_path', String(1000), nullable=False, server_default=text("''::character varying"), comment='letsgen 接口路径'))
+    interact_mode: str = Field(sa_column=Column('interact_mode', String(10), nullable=False, server_default=text("''::character varying"), comment='交互模式:stream,single'))
     request_body: str = Field(sa_column=Column('request_body', Text, nullable=False, server_default=text("''::text"), comment='请求体'))
     request_header: str = Field(sa_column=Column('request_header', Text, nullable=False, server_default=text("''::text"), comment='向厂商发送的请求 header'))
     reply_body: str = Field(sa_column=Column('reply_body', Text, nullable=False, server_default=text("''::text"), comment='厂商响应体'))
@@ -58,20 +60,21 @@ class LlmApiRequestMetaLog(SQLModel, table=True):
         {'comment': 'llm请求元信息表,只含参数不含prompt和reply'}
     )
 
-    id: int = Field(sa_column=Column('id', BigInteger, primary_key=True, comment='主键'))
+    id: int = Field(sa_column=Column('id', BigInteger, primary_key=True, autoincrement=True, comment='主键'))
     log_time: datetime.datetime = Field(sa_column=Column('log_time', DateTime(True), primary_key=True, server_default=text('now()'), comment='入库记录时间'))
     account_name: str = Field(sa_column=Column('account_name', String(50), nullable=False, server_default=text("''::character varying"), comment='账号名'))
-    model_name: str = Field(sa_column=Column('model_name', String(50), nullable=False, server_default=text("''::character varying"), comment='模型名'))
+    model_id: str = Field(sa_column=Column('model_id', String(50), nullable=False, server_default=text("''::character varying"), comment='模型名'))
     gen_api_path: str = Field(sa_column=Column('gen_api_path', String(1000), nullable=False, server_default=text("''::character varying"), comment='letsgen 接口路径'))
+    gen_req_id: str = Field(sa_column=Column('gen_req_id', String(100), nullable=False, server_default=text("''::character varying"), comment='letsgen 生成的请求 id'))
+    gen_trace_id: str = Field(sa_column=Column('gen_trace_id', String(50), nullable=False, server_default=text("''::character varying"), comment='trace_id'))
     interact_mode: str = Field(sa_column=Column('interact_mode', String(10), nullable=False, server_default=text("''::character varying"), comment='交互模式:stream,single'))
     provider_name: str = Field(sa_column=Column('provider_name', String(50), nullable=False, server_default=text("''::character varying"), comment='接入厂商名'))
-    gen_trace_id: str = Field(sa_column=Column('gen_trace_id', String(50), nullable=False, server_default=text("''::character varying"), comment='trace_id'))
-    request_id: str = Field(sa_column=Column('request_id', String(100), nullable=False, server_default=text("''::character varying"), comment='厂商提供的 request id'))
+    provider_req_id: str = Field(sa_column=Column('provider_req_id', String(100), nullable=False, server_default=text("''::character varying"), comment='厂商提供的 request id'))
     request_body_meta: str = Field(sa_column=Column('request_body_meta', Text, nullable=False, server_default=text("''::text"), comment='请求体元数据'))
     reply_body_meta: str = Field(sa_column=Column('reply_body_meta', Text, nullable=False, server_default=text("''::text"), comment='响应体元数据'))
     request_in_time: datetime.datetime = Field(sa_column=Column('request_in_time', DateTime(True), nullable=False, server_default=text("'2000-01-01 08:00:00+08'::timestamp with time zone"), comment='letsgen 接到的时间'))
     provider_in_time: datetime.datetime = Field(sa_column=Column('provider_in_time', DateTime(True), nullable=False, server_default=text("'2000-01-01 08:00:00+08'::timestamp with time zone"), comment='向厂商发起请求的时间'))
     provider_end_time: datetime.datetime = Field(sa_column=Column('provider_end_time', DateTime(True), nullable=False, server_default=text("'2000-01-01 08:00:00+08'::timestamp with time zone"), comment='厂商结束响应时间'))
-    request_out_time: datetime.datetime = Field(sa_column=Column('request_out_time', DateTime(True), nullable=False, server_default=text("'2000-01-01 08:00:00+08'::timestamp with time zone"), comment='letsgen 发送完响应时间'))
+    response_out_time: datetime.datetime = Field(sa_column=Column('response_out_time', DateTime(True), nullable=False, server_default=text("'2000-01-01 08:00:00+08'::timestamp with time zone"), comment='letsgen 发送完响应时间'))
     provider_region: Optional[str] = Field(default=None, sa_column=Column('provider_region', String(50), comment='接入厂商服务区,部分厂商没有区的概念'))
     first_token_time: Optional[datetime.datetime] = Field(default=None, sa_column=Column('first_token_time', DateTime(True), comment='收到首 token 响应时间,仅对stream有值'))

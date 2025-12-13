@@ -9,6 +9,8 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from sqlmodel import SQLModel
+
 import letsgen.db.pg_connection as db_pg_connection
 import letsgen.middlewares.distributed_concurrency as distributed_concurrency
 
@@ -30,5 +32,7 @@ async def lifespan(app: FastAPI):
     # 向 redis 发送心跳信号任务停止
     await distributed_concurrency.ConcurrencyLimitMiddleware.cls_async_close()
     await db_pg_connection.close_pg_pool()
+
+    SQLModel.metadata.clear()
 
     logger.info("Letsgen service end...")

@@ -20,6 +20,8 @@ class LlmRequestContext(BaseModel):
     letsgen_req_id: str | None = None
     # trace_id 用于请求链路追踪
     trace_id: str | None = None
+    # session_id 用于定义多轮 session
+    session_id: str | None = None
     # 项目代号, 用于按项目导出调用记录
     proj_id: str | None = None
     # 身份信息
@@ -48,6 +50,8 @@ class LlmRequestContext(BaseModel):
     provider_name: str | None = None
     # 厂商鉴权代号
     provider_auth_id: str | None = None
+    # 厂商 region 代号
+    provider_region: str | None = None
     # 厂商 endpoint
     provider_endpoint: str | None = None
     # 厂商侧模型代号

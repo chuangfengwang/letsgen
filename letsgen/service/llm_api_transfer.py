@@ -35,8 +35,12 @@ class LlmTransferService:
         """调用 endpoint"""
         raise NotImplementedError()
 
-    def transfer_response(self, response: Any) -> Any:
-        """转换返回结果"""
+    def transfer_single_response(self, response: Any, context: LlmRequestContext) -> Any:
+        """对非流式响应 转换返回结果"""
+        raise NotImplementedError()
+
+    async def transfer_stream_response(self, chunk: Any, context: LlmRequestContext) -> Any:
+        """对流式响应 chunk 转换返回结果"""
         raise NotImplementedError()
 
     async def fetch_price(self, model_id: str) -> dict:
@@ -86,26 +90,30 @@ class LlmTransferService:
     async def run(self, context: LlmRequestContext):
         """执行调用流程"""
         # 解析基础参数
-        context.mark_event_dt("start_api_transfer")
+        context.mark_event_dt("api_transfer_start")
         body = context.origin_body_param
         headers = {}
         if body is None:
             raise error_class.LlmParamError("Missing body param")
-        model_name, is_stream = self.parse_model_and_stream(body)
-        context.model_id = model_name
+        model_id, is_stream = self.parse_model_and_stream(body)
+        context.model_id = model_id
         context.is_stream = is_stream
         # 解析 endpoint 信息
-        provider_name, endpoint_baseurl, edp_auth, provider_model_id = await self.pick_endpoint(model_name)
+        context.mark_event_dt("pick_endpoint_start")
+        provider_name, endpoint_baseurl, edp_auth, provider_model_id = await self.pick_endpoint(model_id)
         if endpoint_baseurl is None:
-            raise error_class.AdminConfigError(f"Cannot find endpoint for model {model_name}")
+            raise error_class.AdminConfigError(f"Cannot find endpoint for model {model_id}")
         context.provider_name = provider_name
         context.provider_endpoint = endpoint_baseurl
         context.provider_model_id = provider_model_id
         if edp_auth is None:
             raise error_class.AdminConfigError(f"Cannot find provider auth for endpoint {endpoint_baseurl}")
         context.provider_auth_id = edp_auth
+        context.mark_event_dt("pick_endpoint_end")
         # 解析代理
+        context.mark_event_dt("pick_proxy_start")
         proxy = self.pick_proxy(endpoint_baseurl)
+        context.mark_event_dt("pick_proxy_end")
         # 解析请求参数
         context.mark_event_dt("param_transfer_start")
         provider_params = self.transfer_param(body, headers, {}, context)
@@ -114,9 +122,13 @@ class LlmTransferService:
         context.mark_event_dt("call_endpoint_start")
         response = await self.call_endpoint(endpoint_baseurl, auth=edp_auth, params=provider_params, proxy=proxy)
         context.provider_response = response
-        context.mark_event_dt("call_endpoint_responded")
+        context.mark_event_dt("call_endpoint_end")
         context.mark_event_dt("transfer_response_start")
-        end_response = self.transfer_response(response)
-        context.end_response = end_response
+        if not context.is_stream:
+            end_response = self.transfer_single_response(response, context)
+            context.end_response = end_response
+        else:
+            end_response = response
         context.mark_event_dt("transfer_response_end")
+        context.mark_event_dt("api_transfer_end")
         return end_response

@@ -50,12 +50,13 @@ class RequestResponseLogger:
         context.letsgen_req_id = codec_util.gen_uuid()
         headers = Headers(scope=scope)
         context.trace_id = headers.get("qtraceid", default=context.letsgen_req_id)
+        context.session_id = headers.get("x-sessionid", "")
+        context.proj_id = headers.get("x-project", "")
         context.request_path = scope["path"]
         context.request_method = scope["method"]
         client = scope.get("client")
         client_ip = client[0] if client else "N/A"
         context.client_ip = client_ip
-        context.proj_id = headers.get("project", "")
 
         # 读取请求体
         body_param = None
@@ -140,13 +141,13 @@ class RequestResponseLogger:
                 response_headers = {k.decode(): v.decode() for k, v in message.get("headers", [])}
 
                 # 记录响应元数据
-                response_out_dt = context.mark_event_dt("response_out")
+                response_out_start_dt = context.mark_event_dt("response_out_start")
                 process_time = datatime_util.timedelta_to_milliseconds((datetime.now() - request_in_dt))
                 response_metadata_log_data = {
                     "qtraceid": context.trace_id,
                     "type": "http_response_metadata",
                     "request_in_dt": datatime_util.datetime_to_str(request_in_dt),
-                    "response_out_dt": datatime_util.datetime_to_str(response_out_dt),
+                    "response_out_start_dt": datatime_util.datetime_to_str(response_out_start_dt),
                     "process_time": process_time,
                     "proj_id": context.proj_id,
                     "status_code": status_code,
@@ -168,6 +169,8 @@ class RequestResponseLogger:
                     except Exception:
                         chunk_content_preview = f"<binary chunk of {len(body)} bytes>"
 
+                    if not context.get_event_dt("response_chunk_start"):
+                        context.mark_event_dt("response_chunk_start")
                     chunk_meta_info = {
                         "letsgen_req_id": context.letsgen_req_id,
                         "qtraceid": context.trace_id,
@@ -182,6 +185,8 @@ class RequestResponseLogger:
                         f"chunk_content_preview: {chunk_content_preview.rstrip()}")
 
             await send(message)
+            context.mark_event_dt("response_chunk_end")
+            context.mark_event_dt("response_out_end")
 
         try:
             await self.app(scope, replay_receive, send_with_logging)

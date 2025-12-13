@@ -17,7 +17,7 @@ from sqlalchemy import select, and_, or_, not_
 from sqlalchemy.dialects.postgresql import insert
 
 import letsgen.db.pg_connection as pg_connection
-from letsgen.db.pg_log_entity_auto import LlmApiModelCallStat
+from letsgen.db.pg_log_entity_auto import LlmApiModelCallStat, LlmApiRequestMetaLog, LlmApiRequestBodyLog
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ async def fetch_model_call_stat(account_name: str) -> List[LlmApiModelCallStat]:
 async def update_call_stat(delta_stat: LlmApiModelCallStat):
     stmt = insert(LlmApiModelCallStat).values(
         account_name=delta_stat.account_name,
-        model_name=delta_stat.model_name,
+        model_id=delta_stat.model_id,
         call_time_hour=delta_stat.call_time_hour,
         period_last_call_at=delta_stat.period_last_call_at,
         call_num=delta_stat.call_num,
@@ -49,7 +49,7 @@ async def update_call_stat(delta_stat: LlmApiModelCallStat):
     )
 
     stmt = stmt.on_conflict_do_update(
-        index_elements=["account_name", "model_name", "call_time_hour"],  # 唯一约束字段
+        index_elements=["account_name", "model_id", "call_time_hour"],  # 唯一约束字段
         set_={
             "period_last_call_at": stmt.excluded.period_last_call_at,
             "call_num": LlmApiModelCallStat.call_num + stmt.excluded.call_num,
@@ -66,3 +66,25 @@ async def update_call_stat(delta_stat: LlmApiModelCallStat):
     async with async_session_local() as session:
         await session.execute(stmt)
         await session.commit()
+
+
+async def insert_request_meta_log(meta_log: LlmApiRequestMetaLog):
+    """插入请求元信息日志"""
+    db_engine = await pg_connection.async_log_pg_engine()
+    async_session_local = async_sessionmaker(bind=db_engine, class_=AsyncSession, expire_on_commit=False)
+    async with async_session_local() as session:
+        async with session.begin():
+            session.add(meta_log)
+            await session.flush()
+            return meta_log
+
+
+async def insert_request_body_log(body_log: LlmApiRequestBodyLog):
+    """插入请求体日志"""
+    db_engine = await pg_connection.async_log_pg_engine()
+    async_session_local = async_sessionmaker(bind=db_engine, class_=AsyncSession, expire_on_commit=False)
+    async with async_session_local() as session:
+        async with session.begin():
+            session.add(body_log)
+            await session.flush()
+            return body_log
