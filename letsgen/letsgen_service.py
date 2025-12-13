@@ -61,15 +61,25 @@ if __name__ == '__main__':
 
     service = os.path.basename(__file__)[:-3]
     # 启动服务
-    uvicorn.run(
-        f"{service}:app",
-        host="0.0.0.0",
-        port=config.letsgen_web_port,
-        workers=config.letsgen_workers,
-        timeout_keep_alive=config.timeout_keep_alive,
-        limit_max_requests=None,  # 不限制请求数
-        # access_log=False,  # 禁用 access 日志
-        proxy_headers=True,  # 启用 X-Forwarded-For 支持
-        forwarded_allow_ips="192.168.0.0/16,172.16.0.0/12,10.0.0.0/8,127.0.0.1,[::1]",  # 信任反代ip范围为局域网 ip
-        log_config=concurrent_log.UVICORN_LOGGING_CONFIG,  # 使用自定义日志配置
-    )
+    try:
+        uvicorn.run(
+            f"{service}:app",
+            host="0.0.0.0",
+            port=config.letsgen_web_port,
+            workers=config.letsgen_workers,
+            timeout_keep_alive=config.timeout_keep_alive,
+            limit_max_requests=None,  # 不限制请求数
+            # access_log=False,  # 禁用 access 日志
+            proxy_headers=True,  # 启用 X-Forwarded-For 支持
+            forwarded_allow_ips="192.168.0.0/16,172.16.0.0/12,10.0.0.0/8,127.0.0.1,[::1]",  # 信任反代ip范围为局域网 ip
+            log_config=concurrent_log.UVICORN_LOGGING_CONFIG,  # 使用自定义日志配置
+        )
+    except OSError as e:
+        logger.error(f"Service startup failed by OSError: {e}", exc_info=True)
+        raise
+    except Exception as e:
+        logger.error(f"Service startup error: {e}", exc_info=True)
+        raise
+    except BaseException as e:
+        logger.error(f"Service startup interrupt by: {e}", exc_info=True)
+        raise

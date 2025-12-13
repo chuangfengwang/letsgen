@@ -176,7 +176,7 @@ UVICORN_LOGGING_CONFIG = {
             "propagate": False,
         },
         "uvicorn": {  # 确保 Uvicorn 的日志也使用你想要的配置
-            "handlers": ["stdout_console"],
+            "handlers": ["stdout_console", "stderr_console"],  # 添加 stderr_console 处理错误日志
             "level": "INFO",
             "propagate": False,
         },
