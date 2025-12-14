@@ -16,6 +16,10 @@ from letsgen.exceptions import error_class
 class LlmTransferService:
     """LLM API 转换服务基类"""
 
+    async def async_init(self):
+        """异步初始化"""
+        pass
+
     async def pick_endpoint(self, model_name: str) -> Tuple[str, str, str, str]:
         """获取模型对应的 endpoint
         :return (provider, endpoint_baseurl, auth, provider_model_id)"""

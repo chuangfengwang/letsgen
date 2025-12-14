@@ -44,10 +44,11 @@ async def test_upload_data(async_fetch_connection):
 @pytest.mark.asyncio
 async def test_get_presigned_url(async_fetch_connection):
     client = async_fetch_connection
-    url = await get_presigned_url(
+    url = await get_public_presigned_url(
         client,
         config.letsgen_minio_bucket_name,
-        "example/hello.txt",
+        # "example/hello.txt",
+        "202512/14T21I/c93f73214b3d4169871de8614d92c43b.jpg",
         expire_after_seconds=3600  # 1 hour
     )
     print()
@@ -96,7 +97,7 @@ async def main():
         )
 
         # 示例：生成预签名 URL
-        url = await get_presigned_url(
+        url = await get_public_presigned_url(
             client,
             config.letsgen_minio_bucket_name,
             "example/hello.txt",

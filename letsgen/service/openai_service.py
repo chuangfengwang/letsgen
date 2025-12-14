@@ -28,9 +28,10 @@ from letsgen.db.pg_log_entity_auto import LlmApiModelCallStat, LlmApiRequestMeta
 from letsgen.entity.llm_entity import LlmRequestContext
 from letsgen.exceptions import error_class
 from letsgen.service.llm_api_transfer import LlmTransferService
+from letsgen.service.log_content_service import LogContentService
+from letsgen.system.global_service import log_content_service
 from letsgen.utils import password_util
 from letsgen.utils.function_util import all_param_expect_kwargs
-from service.log_content_service import LogContentService
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +53,11 @@ class OpenAiChatCompletionsService(LlmTransferService):
         with open(os.path.join(config.cur_dir, "volc_model_mapping.json"), "r") as f:
             self.mock_model_mapping = json.load(f)
 
-        self.log_content_service = LogContentService()
+        self.log_content_service: LogContentService = log_content_service
+
+    async def async_init(self):
+        """异步初始化"""
+        pass
 
     def _get_openai_chat_completion_params(self) -> List[str]:
         """获取 OpenAI Chat Completion 支持的参数列表"""
@@ -218,7 +223,6 @@ class OpenAiChatCompletionsService(LlmTransferService):
 
     async def transfer_stream_response(self, chunk: str, context: LlmRequestContext) -> Any:
         """对流式响应, 利用流式回调累积结果"""
-        print("transfer_stream_response_chunk: ", chunk)
         # 只留下有效 chunk 信息
         if chunk.startswith("data: "):
             chunk = chunk[len("data: "):]
@@ -327,7 +331,7 @@ class OpenAiChatCompletionsService(LlmTransferService):
             # 3. 处理结束信息 (finish_reason 和 usage)
             if choice.get("finish_reason"):
                 # 累加完所有 tool_calls 后，将其转换为最终对象结构
-                accumulated_message["tool_calls"] = [
+                accumulated_message["message"]["tool_calls"] = [
                     tc for tc in building_tool_calls.values()
                 ]
                 accumulated_message["finish_reason"] = choice.get("finish_reason")

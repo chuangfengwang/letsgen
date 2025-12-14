@@ -89,18 +89,17 @@ class LogContentService:
 
     async def presign_internal_url_for_object(self, object_name: str) -> str:
         """获取对象的内网预签名 URL"""
-        url = await minio_dao.get_presigned_url(
+        url = await minio_dao.get_internal_url(
             client=self.minio_client,
             bucket_name=config.letsgen_minio_bucket_name,
             object_name=object_name,
-            expire_after_seconds=config.letsgen_minio_internal_expire,
             target_host=config.letsgen_minio_internal_url,
         )
         return url
 
     async def presign_public_url_for_object(self, object_name: str) -> str:
         """获取对象的内网预签名 URL"""
-        url = await minio_dao.get_presigned_url(
+        url = await minio_dao.get_public_presigned_url(
             client=self.minio_client,
             bucket_name=config.letsgen_minio_bucket_name,
             object_name=object_name,

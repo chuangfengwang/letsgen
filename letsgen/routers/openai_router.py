@@ -10,19 +10,14 @@ from __future__ import annotations
 import asyncio
 from typing import cast
 
-from fastapi import APIRouter, Request, Response, Depends, BackgroundTasks, FastAPI
-from fastapi.responses import StreamingResponse
-from sse_starlette import EventSourceResponse
+from fastapi import Request, Response, Depends, BackgroundTasks, FastAPI
 from starlette.middleware.cors import CORSMiddleware
-from watchfiles import awatch
 
 import letsgen.dependencies.auth as auth
 from letsgen.entity.llm_entity import LlmRequestContext
-from letsgen.service.llm_api_transfer import LlmTransferService
-from letsgen.service.openai_service import OpenAiChatCompletionsService
+from letsgen.system.global_service import llmTransferService
 from letsgen.utils.chunk_response import SseChunkStreamingResponse
 
-# router = APIRouter(prefix="/api/openai/v1", tags=["openai"])
 openai_app = FastAPI()
 openai_app.add_middleware(
     CORSMiddleware,
@@ -30,8 +25,6 @@ openai_app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-llmTransferService: LlmTransferService = OpenAiChatCompletionsService()
 
 
 @openai_app.post(
