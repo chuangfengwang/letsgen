@@ -64,7 +64,8 @@ async def get_minio_client() -> Minio:
         secure=config.letsgen_minio_endpoint_secure,  # http for False, https for True
     )
     await check_and_make_bucket(minio_client, config.letsgen_minio_bucket_name)
-    await set_minio_policy(minio_client)
+    # 应由 minio 管理员配置,而不是每次启动都设置
+    # await set_minio_policy(minio_client)
     return minio_client
 
 
@@ -74,26 +75,26 @@ async def set_minio_policy(client: Minio):
     # 将 Python 字典转换为 JSON 字符串
     policy_str = json.dumps(POLICY_JSON)
     try:
-        # --- 核心步骤: 调用 set_bucket_policy ---
-        await client.set_bucket_policy(
-            config.letsgen_minio_bucket_name,
-            policy_str
-        )
-        logger.info("S3 存储桶策略设置成功！")
-
         # 验证策略是否设置成功 (可选)
         current_policy_str = await client.get_bucket_policy(config.letsgen_minio_bucket_name)
         current_policy = json.loads(current_policy_str)
 
         # 检查策略中的第一个 Sid 是否匹配
         if current_policy.get("Statement", [{}])[0].get("Sid") == "LetsgenAllowSpecificInternalIPs":
-            logger.info("S3 存储桶策略验证成功！")
+            logger.info("✅ S3 policy already set! No changes made.")
         else:
-            logger.error("❌ 警告：S3 存储桶策略与预期不完全一致。")
+            logger.warning("❌ S3 policy LetsgenAllowSpecificInternalIPs not found or mismatched. Updating policy...")
+            # 调用 set_bucket_policy
+            await client.set_bucket_policy(
+                config.letsgen_minio_bucket_name,
+                policy_str
+            )
+            logger.info("✅ S3 policy updated successfully.")
+
     except S3Error as e:
-        logger.error(f"❌ S3 设置策略时发生错误: {e}", exc_info=True)
+        logger.error(f"❌ S3 set policy error: {e}", exc_info=True)
     except Exception as e:
-        logger.error(f"❌ S3 设置策略时发生未知错误: {e}", exc_info=True)
+        logger.error(f"❌ S3 set_minio_policy error: {e}", exc_info=True)
 
 
 async def close_minio_client():
