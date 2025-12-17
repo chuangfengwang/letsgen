@@ -38,6 +38,7 @@ Thumbs.db
 Pods/
 
 # runtime
+node_modules/
 .ipynb_checkpoints/
 __pycache__/
 logs/
