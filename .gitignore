@@ -39,6 +39,7 @@ Pods/
 
 # runtime
 node_modules/
+static-ui/
 .ipynb_checkpoints/
 __pycache__/
 logs/
