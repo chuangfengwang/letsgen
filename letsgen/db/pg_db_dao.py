@@ -41,23 +41,36 @@ async def admin_user_exist() -> bool:
         return admin_count > 0
 
 
-async def create_first_admin(user: LetsgenUser) -> LetsgenUser | None:
-    """创建第一个管理员用户: 只在系统初始化时执行一次. 返回是否创建成功"""
+async def user_exist(user_name: str):
+    """检查用户是否存在"""
+    db_engine = await pg_connection.async_db_pg_engine()
+
+    async_session_local = async_sessionmaker(bind=db_engine, class_=AsyncSession, expire_on_commit=False)
+    async with async_session_local() as session:
+        result = await session.execute(
+            text("SELECT COUNT(*) FROM letsgen_user WHERE user_name = :user_name"),
+            {"user_name": user_name})
+        admin_count = result.fetchall()[0][0]
+        return admin_count > 0
+
+
+async def register_user(user: LetsgenUser) -> LetsgenUser | None:
+    """用户主动注册用户. 返回是否创建成功"""
     db_engine = await pg_connection.async_db_pg_engine()
 
     async_session_local = async_sessionmaker(bind=db_engine, class_=AsyncSession, expire_on_commit=False)
     async with async_session_local() as session:
         # 对密码进行哈希处理
         user.user_password = hash_password(user.user_password)
-        # 创建管理员用户
+        # 创建用户
         try:
             session.add(user)
             await session.commit()
-            logger.info(f"Created first admin user success! user_name: {user.user_name}, id: {user.id}")
+            logger.info(f"Created user success! user_name: {user.user_name}, id: {user.id}")
             await session.refresh(user)
             return user
         except Exception as e:
-            logger.error(f"Created first admin user failed! user_name: {user.user_name}", exc_info=True)
+            logger.error(f"Created user failed! user_name: {user.user_name}", exc_info=True)
             return None
 
 

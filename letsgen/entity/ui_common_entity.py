@@ -17,5 +17,5 @@ from pydantic import BaseModel, ConfigDict, Field
 class UiBaseResponse(BaseModel):
     """Ui接口基础响应实体"""
     status: int = 0
-    message: str | None = None
+    msg: str | None = None
     data: Any | None = None

@@ -26,7 +26,7 @@ async def create_first_admin_user(user: FirstAdminUser):
     await ui_admin_service.create_first_admin_user(user=user)
     return ui_entity.UiBaseResponse(
         status=0,
-        message="",
+        msg="",
         data={}
     )
 
@@ -40,7 +40,7 @@ async def create_credential(
     await ui_admin_service.create_credential(credential_form=credential_form, by_admin=identity)
     return ui_entity.UiBaseResponse(
         status=0,
-        message="",
+        msg="",
         data={}
     )
 
@@ -54,7 +54,7 @@ async def query_valid_credential(
     credential_list = await ui_admin_service.query_valid_credential(provider_name=provider)
     return ui_entity.UiBaseResponse(
         status=0,
-        message="",
+        msg="",
         data={"credential_list": credential_list}
     )
 
@@ -71,7 +71,7 @@ async def create_endpoint(
     await ui_admin_service.create_endpoint(endpoint_form=endpoint_form)
     return ui_entity.UiBaseResponse(
         status=0,
-        message="",
+        msg="",
         data={}
     )
 
@@ -86,7 +86,7 @@ async def query_valid_endpoint(
     endpoint_name_list = await ui_admin_service.query_valid_endpoint(provider_name=provider)
     return ui_entity.UiBaseResponse(
         status=0,
-        message="",
+        msg="",
         data={"endpoint_list": endpoint_name_list}
     )
 
@@ -103,7 +103,7 @@ async def add_endpoint_for_model(
     await ui_admin_service.add_endpoint_for_model(form=add_endpoint_for_model_form)
     return ui_entity.UiBaseResponse(
         status=0,
-        message="",
+        msg="",
         data={}
     )
 
@@ -122,7 +122,7 @@ async def create_user(
     await ui_normal_service.create_user(user=user, by_admin=identity)
     return ui_entity.UiBaseResponse(
         status=0,
-        message="",
+        msg="",
         data={}
     )
 

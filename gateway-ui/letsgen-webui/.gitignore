@@ -14,6 +14,13 @@ dist-ssr
 coverage
 *.local
 
+# 环境变量文件（不提交敏感信息）
+.env
+.env.development
+.env.production
+# 但保留示例文件
+!.env.example
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

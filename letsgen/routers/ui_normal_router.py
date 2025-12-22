@@ -22,19 +22,28 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/ui/normal", tags=["ui-normal"])
 
 
-# 用户登录
 @router.post("/login")
 async def login(form: LoginEntity):
-    """创建第一个 admin 用户"""
+    """用户登录"""
     jwt = await ui_normal_service.login(form=form)
     return ui_entity.UiBaseResponse(
         status=0,
-        message="",
+        msg="",
         data={"jwt": jwt}
     )
 
 
 # 用户注册
+@router.post("/register")
+async def register(form: RegisterUserEntity):
+    """用户注册"""
+    await ui_normal_service.register(user=form)
+    return ui_entity.UiBaseResponse(
+        status=0,
+        msg="",
+        data={}
+    )
+
 
 # 修改密码
 
@@ -56,7 +65,7 @@ async def create_account(
     await ui_normal_service.create_account(account, identity)
     return ui_entity.UiBaseResponse(
         status=0,
-        message="",
+        msg="",
         data={}
     )
 
@@ -82,7 +91,7 @@ async def create_api_key(
     letsgen_apikey = await ui_normal_service.create_apikey(apikey, identity)
     return ui_entity.UiBaseResponse(
         status=0,
-        message="",
+        msg="",
         data={**letsgen_apikey.model_dump()}
     )
 
@@ -105,7 +114,7 @@ async def create_wallet(
     letsgen_apikey = await ui_normal_service.create_wallet(wallet_form, identity)
     return ui_entity.UiBaseResponse(
         status=0,
-        message="",
+        msg="",
         data={**letsgen_apikey.model_dump()}
     )
 # 修改钱包基本信息

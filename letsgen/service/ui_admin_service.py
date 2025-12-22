@@ -46,7 +46,7 @@ async def create_first_admin_user(user: FirstAdminUser) -> bool:
         user_status="ok",
         **{}
     )
-    letsgen_user = await pg_db_dao.create_first_admin(letsgen_user)
+    letsgen_user = await pg_db_dao.register_user(letsgen_user)
     if not letsgen_user:
         msg = f"Create first admin user failed. user_name: {user.user_name}"
         raise error_class.UiOpsConfigError(msg)

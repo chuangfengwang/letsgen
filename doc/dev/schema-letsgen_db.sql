@@ -32,7 +32,7 @@ COMMENT ON COLUMN letsgen_user.user_email IS '用户邮箱';
 COMMENT ON COLUMN letsgen_user.user_password IS '用户密码';
 COMMENT ON COLUMN letsgen_user.user_phone IS '用户手机号';
 COMMENT ON COLUMN letsgen_user.ui_role IS 'UI角色:admin,normal';
-COMMENT ON COLUMN letsgen_user.user_status IS '用户状态:ok,disabled';
+COMMENT ON COLUMN letsgen_user.user_status IS '用户状态:ok,disabled,pending';
 COMMENT ON COLUMN letsgen_user.note IS '账号备注';
 COMMENT ON COLUMN letsgen_user.create_at IS '创建时间';
 COMMENT ON COLUMN letsgen_user.update_at IS '更新时间';

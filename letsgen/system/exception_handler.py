@@ -31,10 +31,10 @@ def add_global_exception_handler(app: FastAPI):
                      exc_info=True)
         headers = {"X-Request-Id": context.letsgen_req_id, "qtraceid": context.trace_id, }
         if hasattr(exc, "message"):
-            error_info["message"] = exc.message
+            error_info["msg"] = exc.message
         else:
             message = f'Letsgen service error'
-            error_info["message"] = message
+            error_info["msg"] = message
         # 响应码
         status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         if isinstance(exc, (error_class.UiAuthorizationError, error_class.LlmAuthorizationError)):
@@ -43,8 +43,9 @@ def add_global_exception_handler(app: FastAPI):
             status_code = status.HTTP_400_BAD_REQUEST
         elif isinstance(exc, (error_class.ProviderRateLimitError,)):
             status_code = status.HTTP_429_TOO_MANY_REQUESTS
+        error_info["status"] = 1
         return JSONResponse(
-            content={"error": error_info},
+            content=error_info,
             headers=headers,
             status_code=status_code,
         )

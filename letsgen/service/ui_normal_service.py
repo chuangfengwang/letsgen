@@ -19,8 +19,9 @@ from letsgen.db.pg_db_entity_auto import LetsgenUser, LetsgenBillAccount, Letsge
 from letsgen.entity.api_common_entity import BillAccountForm, ApiKeyForm, UserToAccountRoleEnum, WalletForm
 from letsgen.entity.auth_entity import Identity
 from letsgen.entity.ui_admin_router_entity import UserForm
-from letsgen.entity.ui_normal_router_entity import LoginEntity
+from letsgen.entity.ui_normal_router_entity import LoginEntity, RegisterUserEntity
 from letsgen.utils import codec_util
+import letsgen.dynamic_config.dyn_sys_config as  dyn_sys_config
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +49,7 @@ def check_jwt(jwt: str) -> Identity:
     payload = password_util.verify_jwt(jwt)
     if not payload:
         msg = "Invalid JWT token. Please login again."
-        logger.error(msg + f" jwt: {jwt}")
+        logger.warning(msg + f" jwt: {jwt}")
         raise error_class.UiAuthorizationError(msg)
     user_name = payload.get("user_name")
     role_list = payload.get("role")
@@ -143,3 +144,26 @@ async def create_wallet(wallet_form: WalletForm, identity: Identity):
         msg = f"Create apikey error. Please contact system admin."
         logger.error(msg + f" currency_type: {wallet_form.currency_type}", exc_info=True)
         raise error_class.UiOpsConfigError(msg)
+
+
+async def register(user: RegisterUserEntity):
+    if await pg_db_dao.user_exist(user.user_name):
+        msg = f"User name existing ({user.user_name}). Please pick another user name."
+        logger.error(msg)
+        raise error_class.UiOpsConfigError(msg)
+
+    letsgen_user = LetsgenUser(
+        user_name=user.user_name,
+        user_password=user.password_plain,
+        user_email=user.user_email,
+        user_phone=user.user_phone,
+        ui_role="normal",
+        user_status="ok" if dyn_sys_config.user_register_ok else "pending",
+        **{}
+    )
+    letsgen_user = await pg_db_dao.register_user(letsgen_user)
+    if not letsgen_user:
+        msg = f"User register failed. user_name: {user.user_name}"
+        raise error_class.UiOpsConfigError(msg)
+    # 创建成功
+    return True

@@ -4,6 +4,7 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
 import vueDevTools from 'vite-plugin-vue-devtools'
+import tailwindcss from '@tailwindcss/vite'
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
@@ -23,10 +24,21 @@ export default defineConfig({
     Components({
       resolvers: [ElementPlusResolver()],
     }),
+    tailwindcss(),
   ],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
+    },
+  },
+  server: {
+    // 开发环境代理配置（仅开发环境有效）
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
 })
