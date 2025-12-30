@@ -2,48 +2,24 @@
   <p class="text-2xl font-bold">注册第一个管理员</p>
   <el-form ref="formRef" :model="form" :rules="rules" label-width="120px" style="max-width: 600px">
     <el-form-item label="用户名" prop="username">
-      <el-input
-        v-model="form.username"
-        @compositionstart="isComposing = true"
-        @compositionend="isComposing = false"
-        @keyup.enter="handleEnter"
-      />
+      <el-input v-model="form.username" @compositionstart="isComposing = true" @compositionend="isComposing = false"
+        @keyup.enter="handleEnter" />
     </el-form-item>
     <el-form-item label="设置密码" prop="password">
-      <el-input
-        v-model="form.password"
-        show-password
-        @compositionstart="isComposing = true"
-        @compositionend="isComposing = false"
-        @keyup.enter="handleEnter"
-      />
+      <el-input v-model="form.password" show-password @compositionstart="isComposing = true"
+        @compositionend="isComposing = false" @keyup.enter="handleEnter" />
     </el-form-item>
     <el-form-item label="重复密码" prop="confirmPassword">
-      <el-input
-        v-model="form.confirmPassword"
-        show-password
-        @compositionstart="isComposing = true"
-        @compositionend="isComposing = false"
-        @keyup.enter="handleEnter"
-      />
+      <el-input v-model="form.confirmPassword" show-password @compositionstart="isComposing = true"
+        @compositionend="isComposing = false" @keyup.enter="handleEnter" />
     </el-form-item>
-    <el-form-item label="电子邮箱" >
-      <el-input
-        v-model="form.email"
-        show-password
-        @compositionstart="isComposing = true"
-        @compositionend="isComposing = false"
-        @keyup.enter="handleEnter"
-      />
+    <el-form-item label="电子邮箱">
+      <el-input v-model="form.email" show-password @compositionstart="isComposing = true"
+        @compositionend="isComposing = false" @keyup.enter="handleEnter" />
     </el-form-item>
     <el-form-item label="手机号">
-      <el-input
-        v-model="form.phone"
-        show-password
-        @compositionstart="isComposing = true"
-        @compositionend="isComposing = false"
-        @keyup.enter="handleEnter"
-      />
+      <el-input v-model="form.phone" show-password @compositionstart="isComposing = true"
+        @compositionend="isComposing = false" @keyup.enter="handleEnter" />
     </el-form-item>
     <el-form-item>
       <el-button type="primary" @click="onSubmit">Create</el-button>
@@ -55,6 +31,7 @@
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue'
 import { registerFirstAdmin } from '../api/nonlogin-request'
+import { ElMessage } from 'element-plus/es'
 
 const formRef = ref()
 const isComposing = ref(false)
@@ -118,12 +95,21 @@ const onSubmit = async () => {
       user_email: form.email || undefined, // 如果为空字符串，发送 undefined
       user_phone: form.phone || undefined, // 如果为空字符串，发送 undefined
     }).then(res => {
-      console.log('注册成功:', res)
       // TODO: 显示成功提示，跳转页面等
+      ElMessage({
+        message: '注册成功',
+        type: 'error',
+        duration: 5000
+      })
     }).catch(err => {
-      console.error('注册失败:', err)
+      // console.error('注册失败:', err)
       // TODO: 显示错误提示（可以使用 Element Plus 的 ElMessage）
-      alert(err.message || '注册失败，请检查输入信息')
+      // alert(err.message || '注册失败，请检查输入信息')
+      // ElMessage({
+      //   message: err.message || '注册失败，请检查输入信息',
+      //   type: 'error',
+      //   duration: 5000
+      // })
     })
   } catch (error) {
     // do nothing

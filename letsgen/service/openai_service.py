@@ -222,7 +222,7 @@ class OpenAiChatCompletionsService(LlmTransferService):
         return response
 
     async def transfer_stream_response(self, chunk: str, context: LlmRequestContext) -> Any:
-        """对流式响应, 利用流式回调累积结果"""
+        """对流式响应, 利用流式回调累积结果. todo: 重构"""
         # 只留下有效 chunk 信息
         if chunk.startswith("data: "):
             chunk = chunk[len("data: "):]
