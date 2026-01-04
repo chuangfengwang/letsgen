@@ -33,7 +33,6 @@ async def login(form: LoginEntity):
     )
 
 
-# 用户注册
 @router.post("/register")
 async def register(form: RegisterUserEntity):
     """用户注册"""
@@ -43,6 +42,8 @@ async def register(form: RegisterUserEntity):
         msg="",
         data={}
     )
+
+# 重置密码
 
 
 # 修改密码

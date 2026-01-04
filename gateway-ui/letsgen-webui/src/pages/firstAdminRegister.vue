@@ -1,5 +1,5 @@
 <template>
-  <p class="text-2xl font-bold">注册第一个管理员</p>
+  <p class="text-2xl font-bold">创建第一个管理员</p>
   <el-form ref="formRef" :model="form" :rules="rules" label-width="120px" style="max-width: 600px">
     <el-form-item label="用户名" prop="username">
       <el-input v-model="form.username" @compositionstart="isComposing = true" @compositionend="isComposing = false"
@@ -14,18 +14,26 @@
         @compositionend="isComposing = false" @keyup.enter="handleEnter" />
     </el-form-item>
     <el-form-item label="电子邮箱">
-      <el-input v-model="form.email" show-password @compositionstart="isComposing = true"
+      <el-input v-model="form.email" @compositionstart="isComposing = true"
         @compositionend="isComposing = false" @keyup.enter="handleEnter" />
     </el-form-item>
     <el-form-item label="手机号">
-      <el-input v-model="form.phone" show-password @compositionstart="isComposing = true"
+      <el-input v-model="form.phone" @compositionstart="isComposing = true"
         @compositionend="isComposing = false" @keyup.enter="handleEnter" />
     </el-form-item>
     <el-form-item>
-      <el-button type="primary" @click="onSubmit">Create</el-button>
-      <el-button @click="onCancel">Cancel</el-button>
+      <el-button type="primary" @click="onSubmit">创建</el-button>
+      <el-button @click="onCancel">取消</el-button>
     </el-form-item>
   </el-form>
+  <div>
+    <p>说明：</p>
+    <ol>
+      <li>该页面只用于系统初始化时创建第一个管理员</li>
+      <li>其他管理员请通过任意一个管理员调整其他普通用户角色来实现</li>
+      <li>系统至少保留一个管理员</li>
+    </ol>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -98,7 +106,7 @@ const onSubmit = async () => {
       // TODO: 显示成功提示，跳转页面等
       ElMessage({
         message: '注册成功',
-        type: 'error',
+        type: 'success',
         duration: 5000
       })
     }).catch(err => {

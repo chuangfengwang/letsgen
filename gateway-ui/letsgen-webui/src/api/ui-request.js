@@ -74,9 +74,8 @@ service.interceptors.response.use(
                         .join('\n');
                     // console.error('验证错误详情:', details);
 
-                    // 处理 HTTP 网络错误 (如 404, 500 等)
                     ElMessage({
-                        message: error.details || '网络连接异常',
+                        message: details || '参数验证错误',
                         type: 'error',
                         duration: 5 * 1000
                     });

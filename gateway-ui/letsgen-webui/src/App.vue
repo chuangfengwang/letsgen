@@ -6,8 +6,9 @@ import { ElConfigProvider } from 'element-plus/es'
   <ElConfigProvider :size="'small'" :z-index="3000">
     <div>
       <router-link to="/">首页</router-link> |
-      <router-link to="/firstAdminRegister">注册</router-link> |
-      <router-link to="/about">关于</router-link>
+      <router-link to="/loginOrRegister">登录或注册</router-link> |
+      <router-link to="/about">关于</router-link> | 
+      <router-link to="/firstAdminRegister">注册第一个管理员</router-link>
     </div>
     <router-view></router-view>
   </ElConfigProvider>
