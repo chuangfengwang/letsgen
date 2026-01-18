@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Request Logs - LLM Gateway</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Noto+Sans:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#22a8c3",
+                        "primary-dark": "#1a8a9f",
+                        "accent": "#4358CC",
+                        "background-light": "#f9fafa",
+                        "background-dark": "#1f242e",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#2a313e",
+                        "text-main": "#0f181a",
+                        "text-sub": "#538893",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"],
+                        "body": ["Noto Sans", "sans-serif"],
+                        "mono": ["ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "Liberation Mono", "Courier New", "monospace"]
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                    boxShadow: {
+                        'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+                        'glow': '0 0 15px rgba(34, 168, 195, 0.15)',
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d1e2e5; 
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #22a8c3; 
+        }
+        
+        .gradient-border-top {
+            position: relative;
+        }
+        .gradient-border-top::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #22a8c3 0%, #4358CC 100%);
+            border-top-left-radius: inherit;
+            border-top-right-radius: inherit;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-text-main font-display antialiased overflow-hidden selection:bg-primary/20 selection:text-primary-dark">
+<div class="flex h-screen w-full overflow-hidden">
+<!-- Sidebar -->
+<aside class="flex w-72 flex-col justify-between border-r border-[#e8f0f2] bg-surface-light dark:bg-surface-dark dark:border-gray-800 transition-colors duration-300 flex-shrink-0 z-20">
+<div class="flex flex-col gap-6 p-6">
+<!-- Logo Area -->
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center size-10 rounded-xl bg-gradient-to-br from-primary to-accent text-white shadow-glow">
+<span class="material-symbols-outlined text-[24px]">hub</span>
+</div>
+<div>
+<h1 class="text-lg font-bold leading-tight tracking-tight">LLM Gateway</h1>
+<p class="text-xs text-text-sub font-medium">Enterprise Admin</p>
+</div>
+</div>
+<!-- Navigation -->
+<nav class="flex flex-col gap-2 mt-2">
+<a class="group flex items-center gap-3 px-4 py-3 rounded-xl text-text-sub hover:bg-background-light hover:text-text-main transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">dashboard</span>
+<span class="text-sm font-medium">My Overview</span>
+</a>
+<a class="group flex items-center gap-3 px-4 py-3 rounded-xl text-text-sub hover:bg-background-light hover:text-text-main transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">science</span>
+<span class="text-sm font-medium">Playground</span>
+</a>
+<a class="group flex items-center gap-3 px-4 py-3 rounded-xl text-text-sub hover:bg-background-light hover:text-text-main transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">smart_toy</span>
+<span class="text-sm font-medium">Models</span>
+</a>
+<a class="group flex items-center gap-3 px-4 py-3 rounded-xl text-text-sub hover:bg-background-light hover:text-text-main transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">folder_shared</span>
+<span class="text-sm font-medium">My Accounts</span>
+</a>
+<!-- Active State -->
+<a class="relative flex items-center gap-3 px-4 py-3 rounded-xl bg-primary/10 text-primary transition-all duration-200 shadow-sm border border-primary/10" href="#">
+<div class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-full"></div>
+<span class="material-symbols-outlined text-[20px] fill-current">table_chart</span>
+<span class="text-sm font-bold">My Logs</span>
+</a>
+<a class="group flex items-center gap-3 px-4 py-3 rounded-xl text-text-sub hover:bg-background-light hover:text-text-main transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">settings</span>
+<span class="text-sm font-medium">My Settings</span>
+</a>
+</nav>
+</div>
+<!-- Sidebar Footer -->
+<div class="p-6 border-t border-[#e8f0f2] dark:border-gray-800">
+<button class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl h-11 bg-surface-light border border-[#d1e2e5] hover:border-primary text-text-main hover:text-primary hover:shadow-soft transition-all duration-200">
+<span class="material-symbols-outlined text-[20px]">admin_panel_settings</span>
+<span class="text-sm font-bold">Switch Admin</span>
+</button>
+</div>
+</aside>
+<!-- Main Content Wrapper -->
+<main class="flex flex-1 flex-col h-full relative overflow-hidden bg-background-light dark:bg-background-dark">
+<!-- Top Header -->
+<header class="flex-shrink-0 flex items-center justify-between px-8 py-4 bg-surface-light/80 backdrop-blur-md border-b border-[#e8f0f2] dark:bg-surface-dark/80 dark:border-gray-800 z-10 sticky top-0">
+<div class="flex items-center gap-4">
+<!-- Breadcrumbs or simple title -->
+<div class="flex items-center text-sm font-medium text-text-sub">
+<span>Dashboard</span>
+<span class="material-symbols-outlined text-base mx-1">chevron_right</span>
+<span class="text-text-main">Request Logs</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-text-sub hover:text-primary hover:bg-primary/5 rounded-lg transition-colors">
+<span class="material-symbols-outlined">help</span>
+</button>
+<button class="p-2 text-text-sub hover:text-primary hover:bg-primary/5 rounded-lg transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+</button>
+<div class="h-8 w-[1px] bg-[#e8f0f2] mx-1"></div>
+<div class="flex items-center gap-3 pl-2">
+<div class="text-right hidden sm:block">
+<p class="text-sm font-bold text-text-main leading-tight">Alex Morgan</p>
+<p class="text-xs text-text-sub">Engineering Lead</p>
+</div>
+<div class="h-10 w-10 rounded-full bg-cover bg-center ring-2 ring-white shadow-sm" data-alt="User profile picture showing a smiling professional" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD22VPgZLk1-QGo4qkVqOEbkQS6rrDApKmuTvOjcRBNTVGzR0EEXiJzptJ3BJVJwKQvzWAI5w_5BRlnnF5dfb8JdCOXRhlkX-JjlFa0tR-yeG4s4fBW8XkXRtOvNiN1JCBSJW6ESWFSCt-AZdSuVXhEFutB964kjOCUn4uJPI31VLQGGYalpqgXR4mDqCCAOD_cRj2MjRDIrRqqtGIo3odZrL32Ro5fme8lG2MQyLanpeDMtFZj3JvupmFwHF23cIZB_2vYtD7R70k')"></div>
+</div>
+</div>
+</header>
+<!-- Scrollable Content -->
+<div class="flex-1 overflow-y-auto overflow-x-hidden p-8 pb-20">
+<div class="max-w-7xl mx-auto flex flex-col gap-6">
+<!-- Page Heading -->
+<div class="flex flex-wrap items-end justify-between gap-4">
+<div>
+<h2 class="text-3xl font-bold tracking-tight text-text-main">Request Logs</h2>
+<p class="text-text-sub mt-1 max-w-2xl">Monitor real-time LLM traffic, analyze latency, costs, and debug integration issues.</p>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center gap-2 px-4 h-10 rounded-lg border border-[#d1e2e5] bg-surface-light text-text-main text-sm font-semibold hover:bg-gray-50 transition-colors">
+<span class="material-symbols-outlined text-[18px]">download</span>
+                                Export CSV
+                            </button>
+<button class="flex items-center gap-2 px-4 h-10 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark shadow-lg shadow-primary/20 transition-all hover:translate-y-[-1px]">
+<span class="material-symbols-outlined text-[18px]">refresh</span>
+                                Refresh
+                            </button>
+</div>
+</div>
+<!-- Filter Bento Box -->
+<div class="bg-surface-light dark:bg-surface-dark rounded-2xl p-6 shadow-soft border border-[#e8f0f2] dark:border-gray-800">
+<div class="flex items-center gap-2 mb-4 text-primary font-bold text-sm uppercase tracking-wider">
+<span class="material-symbols-outlined text-lg">filter_alt</span>
+                            Filter Criteria
+                        </div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+<!-- Time Range -->
+<div class="group">
+<label class="block text-xs font-semibold text-text-sub mb-1.5 uppercase tracking-wide">Time Range</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-sub pointer-events-none text-lg">schedule</span>
+<select class="w-full h-11 pl-10 pr-4 bg-background-light border border-[#d1e2e5] rounded-xl text-sm font-medium text-text-main focus:ring-2 focus:ring-primary/20 focus:border-primary transition-shadow appearance-none cursor-pointer hover:border-primary/50">
+<option>Last 15 Minutes</option>
+<option>Last Hour</option>
+<option selected="">Last 24 Hours</option>
+<option>Last 7 Days</option>
+<option>Custom Range...</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-text-sub pointer-events-none text-lg">expand_more</span>
+</div>
+</div>
+<!-- Account -->
+<div class="group">
+<label class="block text-xs font-semibold text-text-sub mb-1.5 uppercase tracking-wide">Account</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-sub pointer-events-none text-lg">business</span>
+<select class="w-full h-11 pl-10 pr-4 bg-background-light border border-[#d1e2e5] rounded-xl text-sm font-medium text-text-main focus:ring-2 focus:ring-primary/20 focus:border-primary transition-shadow appearance-none cursor-pointer hover:border-primary/50">
+<option selected="">All Accounts</option>
+<option>Team Alpha</option>
+<option>Marketing Ops</option>
+<option>Dev Environment</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-text-sub pointer-events-none text-lg">expand_more</span>
+</div>
+</div>
+<!-- Model -->
+<div class="group">
+<label class="block text-xs font-semibold text-text-sub mb-1.5 uppercase tracking-wide">Model</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-sub pointer-events-none text-lg">smart_toy</span>
+<input class="w-full h-11 pl-10 pr-4 bg-background-light border border-[#d1e2e5] rounded-xl text-sm font-medium text-text-main focus:ring-2 focus:ring-primary/20 focus:border-primary transition-shadow placeholder:text-gray-400 hover:border-primary/50" placeholder="e.g. gpt-4, claude-3" type="text"/>
+</div>
+</div>
+<!-- Status -->
+<div class="group">
+<label class="block text-xs font-semibold text-text-sub mb-1.5 uppercase tracking-wide">Status</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-sub pointer-events-none text-lg">check_circle</span>
+<select class="w-full h-11 pl-10 pr-4 bg-background-light border border-[#d1e2e5] rounded-xl text-sm font-medium text-text-main focus:ring-2 focus:ring-primary/20 focus:border-primary transition-shadow appearance-none cursor-pointer hover:border-primary/50">
+<option selected="">All Statuses</option>
+<option>Success (2xx)</option>
+<option>Errors (4xx/5xx)</option>
+<option>Rate Limited (429)</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-text-sub pointer-events-none text-lg">expand_more</span>
+</div>
+</div>
+<!-- Trace ID - Full Width on Mobile, split on larger -->
+<div class="lg:col-span-2 group">
+<label class="block text-xs font-semibold text-text-sub mb-1.5 uppercase tracking-wide">Trace ID</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-sub pointer-events-none text-lg">fingerprint</span>
+<input class="w-full h-11 pl-10 pr-4 bg-background-light border border-[#d1e2e5] rounded-xl text-sm font-medium text-text-main font-mono focus:ring-2 focus:ring-primary/20 focus:border-primary transition-shadow placeholder:text-gray-400 hover:border-primary/50" placeholder="Search by Trace ID..." type="text"/>
+</div>
+</div>
+<!-- API Key Partial -->
+<div class="lg:col-span-2 group">
+<label class="block text-xs font-semibold text-text-sub mb-1.5 uppercase tracking-wide">API Key (Partial)</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-sub pointer-events-none text-lg">key</span>
+<input class="w-full h-11 pl-10 pr-4 bg-background-light border border-[#d1e2e5] rounded-xl text-sm font-medium text-text-main font-mono focus:ring-2 focus:ring-primary/20 focus:border-primary transition-shadow placeholder:text-gray-400 hover:border-primary/50" placeholder="sk-..." type="text"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Logs Table Card -->
+<div class="bg-surface-light dark:bg-surface-dark rounded-2xl shadow-soft border border-[#e8f0f2] dark:border-gray-800 overflow-hidden flex flex-col gradient-border-top">
+<!-- Table Header Actions -->
+<div class="px-6 py-4 border-b border-[#e8f0f2] flex justify-between items-center">
+<div class="flex items-center gap-2">
+<span class="flex h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+<span class="text-sm font-medium text-text-sub">Live Updates</span>
+</div>
+<span class="text-xs font-mono text-text-sub bg-background-light px-2 py-1 rounded-md border border-[#e8f0f2]">Showing 1-10 of 2,450 events</span>
+</div>
+<!-- Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-background-light border-b border-[#e8f0f2]">
+<th class="px-6 py-3 text-xs font-bold text-text-sub uppercase tracking-wider">Timestamp</th>
+<th class="px-6 py-3 text-xs font-bold text-text-sub uppercase tracking-wider">Trace ID</th>
+<th class="px-6 py-3 text-xs font-bold text-text-sub uppercase tracking-wider">Account</th>
+<th class="px-6 py-3 text-xs font-bold text-text-sub uppercase tracking-wider">Model</th>
+<th class="px-6 py-3 text-xs font-bold text-text-sub uppercase tracking-wider text-right">Tokens (In/Out)</th>
+<th class="px-6 py-3 text-xs font-bold text-text-sub uppercase tracking-wider text-right">Latency</th>
+<th class="px-6 py-3 text-xs font-bold text-text-sub uppercase tracking-wider text-right">Cost</th>
+<th class="px-6 py-3 text-xs font-bold text-text-sub uppercase tracking-wider text-center">Status</th>
+<th class="px-6 py-3 text-xs font-bold text-text-sub uppercase tracking-wider text-center"></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-[#e8f0f2]">
+<!-- Row 1 -->
+<tr class="group hover:bg-primary/5 transition-colors cursor-pointer">
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap font-mono">Oct 24 14:30:01</td>
+<td class="px-6 py-4 text-sm text-primary font-mono whitespace-nowrap group-hover:underline">trc_8s9d76f...</td>
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap font-medium">Team Alpha</td>
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap">
+<span class="px-2 py-1 rounded bg-gray-100 text-xs font-bold text-gray-700">gpt-4-turbo</span>
+</td>
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap font-mono text-right tabular-nums">450 / 120</td>
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap font-mono text-right tabular-nums">1.2s</td>
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap font-mono text-right tabular-nums">$0.034</td>
+<td class="px-6 py-4 text-center whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                                200 OK
+                                            </span>
+</td>
+<td class="px-6 py-4 text-center text-text-sub group-hover:text-primary">
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="group hover:bg-primary/5 transition-colors cursor-pointer">
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap font-mono">Oct 24 14:29:55</td>
+<td class="px-6 py-4 text-sm text-primary font-mono whitespace-nowrap group-hover:underline">trc_7d2f91a...</td>
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap font-medium">Dev User</td>
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap">
+<span class="px-2 py-1 rounded bg-purple-100 text-xs font-bold text-purple-700">claude-3-opus</span>
+</td>
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap font-mono text-right tabular-nums">0 / 0</td>
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap font-mono text-right tabular-nums">0.1s</td>
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap font-mono text-right tabular-nums">$0.000</td>
+<td class="px-6 py-4 text-center whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                                                429 Rate Limit
+                                            </span>
+</td>
+<td class="px-6 py-4 text-center text-text-sub group-hover:text-primary">
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="group hover:bg-primary/5 transition-colors cursor-pointer">
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap font-mono">Oct 24 14:28:12</td>
+<td class="px-6 py-4 text-sm text-primary font-mono whitespace-nowrap group-hover:underline">trc_3k2j55m...</td>
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap font-medium">Marketing Ops</td>
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap">
+<span class="px-2 py-1 rounded bg-gray-100 text-xs font-bold text-gray-700">gpt-3.5-turbo</span>
+</td>
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap font-mono text-right tabular-nums">1240 / 350</td>
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap font-mono text-right tabular-nums">2.4s</td>
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap font-mono text-right tabular-nums">$0.005</td>
+<td class="px-6 py-4 text-center whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                                200 OK
+                                            </span>
+</td>
+<td class="px-6 py-4 text-center text-text-sub group-hover:text-primary">
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="group hover:bg-primary/5 transition-colors cursor-pointer">
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap font-mono">Oct 24 14:27:45</td>
+<td class="px-6 py-4 text-sm text-primary font-mono whitespace-nowrap group-hover:underline">trc_9p8q12x...</td>
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap font-medium">Team Alpha</td>
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap">
+<span class="px-2 py-1 rounded bg-blue-100 text-xs font-bold text-blue-700">mistral-large</span>
+</td>
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap font-mono text-right tabular-nums">200 / 80</td>
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap font-mono text-right tabular-nums">0.8s</td>
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap font-mono text-right tabular-nums">$0.012</td>
+<td class="px-6 py-4 text-center whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                                200 OK
+                                            </span>
+</td>
+<td class="px-6 py-4 text-center text-text-sub group-hover:text-primary">
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 5 (Failure) -->
+<tr class="group hover:bg-primary/5 transition-colors cursor-pointer">
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap font-mono">Oct 24 14:26:02</td>
+<td class="px-6 py-4 text-sm text-primary font-mono whitespace-nowrap group-hover:underline">trc_1x2y3z4...</td>
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap font-medium">Internal Bot</td>
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap">
+<span class="px-2 py-1 rounded bg-gray-100 text-xs font-bold text-gray-700">gpt-4-turbo</span>
+</td>
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap font-mono text-right tabular-nums">0 / 0</td>
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap font-mono text-right tabular-nums">30.0s</td>
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap font-mono text-right tabular-nums">$0.000</td>
+<td class="px-6 py-4 text-center whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                                504 Timeout
+                                            </span>
+</td>
+<td class="px-6 py-4 text-center text-text-sub group-hover:text-primary">
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</td>
+</tr>
+<!-- Row 6 -->
+<tr class="group hover:bg-primary/5 transition-colors cursor-pointer">
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap font-mono">Oct 24 14:25:33</td>
+<td class="px-6 py-4 text-sm text-primary font-mono whitespace-nowrap group-hover:underline">trc_5l6m7n8...</td>
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap font-medium">Product Team</td>
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap">
+<span class="px-2 py-1 rounded bg-purple-100 text-xs font-bold text-purple-700">claude-3-sonnet</span>
+</td>
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap font-mono text-right tabular-nums">1500 / 600</td>
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap font-mono text-right tabular-nums">3.1s</td>
+<td class="px-6 py-4 text-sm text-text-main whitespace-nowrap font-mono text-right tabular-nums">$0.015</td>
+<td class="px-6 py-4 text-center whitespace-nowrap">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                                200 OK
+                                            </span>
+</td>
+<td class="px-6 py-4 text-center text-text-sub group-hover:text-primary">
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="px-6 py-4 border-t border-[#e8f0f2] bg-background-light flex items-center justify-between">
+<div class="flex items-center gap-2">
+<select class="h-9 pl-3 pr-8 bg-surface-light border border-[#d1e2e5] rounded-lg text-xs font-medium text-text-main focus:ring-1 focus:ring-primary focus:border-primary">
+<option>10 rows</option>
+<option>25 rows</option>
+<option>50 rows</option>
+</select>
+</div>
+<div class="flex items-center gap-2">
+<button class="h-9 w-9 flex items-center justify-center rounded-lg border border-[#d1e2e5] bg-surface-light text-text-sub hover:bg-gray-50 disabled:opacity-50" disabled="">
+<span class="material-symbols-outlined text-lg">chevron_left</span>
+</button>
+<span class="text-xs font-medium text-text-sub">Page 1 of 245</span>
+<button class="h-9 w-9 flex items-center justify-center rounded-lg border border-[#d1e2e5] bg-surface-light text-text-sub hover:bg-gray-50 hover:text-primary">
+<span class="material-symbols-outlined text-lg">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

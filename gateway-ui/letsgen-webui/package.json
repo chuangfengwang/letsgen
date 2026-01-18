@@ -22,10 +22,12 @@
     "element-plus": "^2.13.0",
     "tailwindcss": "^4.1.18",
     "vue": "^3.5.25",
+    "vue-i18n": "^11.2.8",
     "vue-router": "^4.6.3",
     "vuex": "^4.1.0"
   },
   "devDependencies": {
+    "@intlify/unplugin-vue-i18n": "^11.0.3",
     "@tsconfig/node24": "^24.0.3",
     "@types/node": "^24.10.1",
     "@vitejs/plugin-vue": "^6.0.2",

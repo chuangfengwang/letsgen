@@ -8,6 +8,8 @@ import tailwindcss from '@tailwindcss/vite'
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
+import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite'
+import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -25,6 +27,13 @@ export default defineConfig({
       resolvers: [ElementPlusResolver()],
     }),
     tailwindcss(),
+    VueI18nPlugin({
+      /* 配置选项 */
+      // 1. 指定包含翻译信息的资源目录
+      include: [path.resolve(__dirname, './src/i18n/locales/**')],
+      // 2. 严格模式：如果检测到未使用的翻译 key 会发出警告
+      strictMessage: false,
+    }),
   ],
   resolve: {
     alias: {

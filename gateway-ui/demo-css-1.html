@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>对称边缘渐变设计 - Tailwind 4</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        'gradient-flow': 'gradient-flow 8s ease infinite',
+                        'pulse-slow': 'pulse 3s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        'gradient-flow': {
+                            '0%, 100%': { 'background-position': '0% 50%' },
+                            '50%': { 'background-position': '100% 50%' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* 对称边缘渐变 - 从边缘到内容区域 */
+        .edge-gradient-symmetric {
+            background: linear-gradient(
+                90deg,
+                /* 左侧边缘渐变 */
+                rgba(139, 92, 246, 1) 0%,
+                rgba(139, 92, 246, 0.8) 1%,
+                rgba(139, 92, 246, 0.6) 2%,
+                rgba(59, 130, 246, 0.4) 3%,
+                rgba(59, 130, 246, 0.2) 4%,
+                rgba(239, 68, 68, 0.1) 4.5%,
+                rgba(255, 255, 255, 0) 5%,
+                /* 右侧边缘渐变（对称） */
+                rgba(239, 68, 68, 0.1) 95%,
+                rgba(239, 68, 68, 0.2) 96%,
+                rgba(59, 130, 246, 0.4) 97%,
+                rgba(59, 130, 246, 0.6) 98%,
+                rgba(139, 92, 246, 0.8) 99%,
+                rgba(139, 92, 246, 1) 100%
+            );
+            background-size: 200% 100%;
+            animation: gradient-flow 10s ease infinite;
+        }
+        
+        /* 简洁版对称渐变 */
+        .edge-gradient-simple {
+            background: linear-gradient(
+                90deg,
+                rgba(139, 92, 246, 1) 0%,
+                rgba(139, 92, 246, 0.7) 25%,
+                rgba(59, 130, 246, 0.3) 40%,
+                rgba(255, 255, 255, 0) 50%,
+                rgba(59, 130, 246, 0.3) 60%,
+                rgba(139, 92, 246, 0.7) 75%,
+                rgba(139, 92, 246, 1) 100%
+            );
+        }
+        
+        /* 纯色边缘渐变 */
+        .edge-gradient-solid {
+            background: linear-gradient(
+                90deg,
+                rgba(139, 92, 246, 1) 0%,
+                rgba(139, 92, 246, 0) 50%,
+                rgba(139, 92, 246, 1) 100%
+            );
+        }
+        
+        /* 三色对称渐变 */
+        .edge-gradient-tri-color {
+            background: linear-gradient(
+                90deg,
+                rgba(139, 92, 246, 1) 0%,
+                rgba(139, 92, 246, 0.8) 15%,
+                rgba(59, 130, 246, 0.6) 30%,
+                rgba(59, 130, 246, 0.3) 40%,
+                rgba(239, 68, 68, 0.1) 45%,
+                rgba(255, 255, 255, 0) 50%,
+                rgba(239, 68, 68, 0.1) 55%,
+                rgba(59, 130, 246, 0.3) 60%,
+                rgba(59, 130, 246, 0.6) 70%,
+                rgba(139, 92, 246, 0.8) 85%,
+                rgba(139, 92, 246, 1) 100%
+            );
+        }
+        
+        /* 渐变文字效果 */
+        .gradient-text {
+            background: linear-gradient(90deg, #8b5cf6, #3b82f6, #ef4444, #3b82f6, #8b5cf6);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: gradient-flow 6s linear infinite;
+        }
+        
+        .gradient-badge {
+            background: linear-gradient(90deg, #8b5cf6, #3b82f6, #ef4444);
+            background-size: 200% auto;
+            animation: gradient-flow 4s linear infinite;
+        }
+        
+        /* 卡片悬停效果 */
+        .content-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .content-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* 自定义滚动条 */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 5px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #8b5cf6, #3b82f6, #ef4444);
+            border-radius: 5px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #7c3aed, #2563eb, #dc2626);
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-white overflow-x-hidden">
+    <!-- 对称渐变背景层 -->
+    <div class="fixed inset-0 edge-gradient-tri-color z-0 pointer-events-none"></div>
+    
+    <!-- 主要内容容器 -->
+    <div class="relative z-10 max-w-6xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        <!-- 头部区域 -->
+        <header class="text-center mb-16">
+            <div class="inline-block px-6 py-2 rounded-full gradient-badge text-white font-medium mb-6">
+                <i class="fas fa-sync-alt mr-2"></i>对称边缘渐变
+            </div>
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold gradient-text mb-6">
+                对称边缘紫蓝红渐变设计
+            </h1>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto mb-10">
+                本设计采用从页面最边缘到主体内容区域的对称渐变，两侧渐变效果完全对称，
+                在内容区域两侧创造柔和的色彩过渡。
+            </p>
+            
+            <!-- 渐变示意图 -->
+            <div class="max-w-4xl mx-auto bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg">
+                <h3 class="text-lg font-bold text-gray-800 mb-4 text-center">对称渐变示意图</h3>
+                <div class="relative h-24 rounded-xl overflow-hidden mb-4">
+                    <div class="absolute inset-0 edge-gradient-simple"></div>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <div class="bg-white/90 px-6 py-3 rounded-lg shadow">
+                            <span class="font-bold text-gray-800">白色内容区域</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-between text-sm text-gray-600">
+                    <div class="text-left">
+                        <div class="w-4 h-4 bg-purple-500 rounded-full inline-block mr-2"></div>
+                        <span>紫色边缘</span>
+                    </div>
+                    <div>
+                        <span>← 渐变过渡 →</span>
+                    </div>
+                    <div class="text-right">
+                        <span>紫色边缘</span>
+                        <div class="w-4 h-4 bg-purple-500 rounded-full inline-block ml-2"></div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <!-- 设计说明区域 -->
+        <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl p-8 mb-16 content-card">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                <!-- 左侧说明 -->
+                <div class="space-y-8">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center mr-4">
+                                <i class="fas fa-arrows-alt-h text-white"></i>
+                            </div>
+                            对称渐变设计
+                        </h2>
+                        <p class="text-gray-600 leading-relaxed">
+                            本页面的渐变效果是完全对称的。从页面最左侧边缘开始，紫色(#8b5cf6)最浓，
+                            随着向中心移动，逐渐变为蓝色(#3b82f6)然后红色(#ef4444)，在到达内容区域前变为透明。
+                            右侧边缘以完全相同的方式从透明渐变回紫色。
+                        </p>
+                    </div>
+                    
+                    <div class="p-6 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border border-purple-100">
+                        <h3 class="text-lg font-bold text-gray-800 mb-3">渐变参数</h3>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-700">渐变方向</span>
+                                <span class="font-medium">从边缘向内容区域</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-700">对称性</span>
+                                <span class="font-medium">两侧完全对称</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-700">渐变范围</span>
+                                <span class="font-medium">边缘到内容边界</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-700">颜色过渡</span>
+                                <span class="font-medium">紫 → 蓝 → 红 → 透明</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 右侧说明 -->
+                <div class="space-y-8">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-red-500 flex items-center justify-center mr-4">
+                                <i class="fas fa-code text-white"></i>
+                            </div>
+                            技术实现
+                        </h2>
+                        <p class="text-gray-600 leading-relaxed">
+                            使用CSS线性渐变创建对称效果，通过精确控制色标位置实现两侧完全相同的渐变。
+                            背景层使用固定定位覆盖整个视口，内容层使用相对定位和背景模糊确保可读性。
+                            响应式设计确保在各种屏幕尺寸上都有良好表现。
+                        </p>
+                    </div>
+                    
+                    <div class="p-6 bg-gradient-to-r from-blue-50 to-red-50 rounded-xl border border-blue-100">
+                        <h3 class="text-lg font-bold text-gray-800 mb-3">颜色值</h3>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="text-center">
+                                <div class="w-12 h-12 rounded-lg bg-purple-500 mx-auto mb-2 flex items-center justify-center">
+                                    <span class="text-white font-bold">紫</span>
+                                </div>
+                                <p class="text-sm text-gray-700">#8b5cf6</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-12 h-12 rounded-lg bg-blue-500 mx-auto mb-2 flex items-center justify-center">
+                                    <span class="text-white font-bold">蓝</span>
+                                </div>
+                                <p class="text-sm text-gray-700">#3b82f6</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-12 h-12 rounded-lg bg-red-500 mx-auto mb-2 flex items-center justify-center">
+                                    <span class="text-white font-bold">红</span>
+                                </div>
+                                <p class="text-sm text-gray-700">#ef4444</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 渐变示例展示 -->
+        <div class="mb-16">
+            <h2 class="text-3xl font-bold text-center text-gray-800 mb-10">渐变效果对比</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- 对称渐变 -->
+                <div class="bg-white rounded-xl shadow-lg p-6 content-card">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">对称渐变</h3>
+                    <div class="h-40 rounded-lg mb-4 overflow-hidden">
+                        <div class="h-full edge-gradient-simple"></div>
+                    </div>
+                    <p class="text-gray-600 text-sm">
+                        从边缘到中心的对称渐变，两侧效果完全相同，在内容区域边缘变为透明。
+                    </p>
+                    <div class="mt-4 text-center">
+                        <span class="inline-block px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
+                            本页使用
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- 三色对称渐变 -->
+                <div class="bg-white rounded-xl shadow-lg p-6 content-card">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">三色对称渐变</h3>
+                    <div class="h-40 rounded-lg mb-4 overflow-hidden">
+                        <div class="h-full edge-gradient-tri-color"></div>
+                    </div>
+                    <p class="text-gray-600 text-sm">
+                        包含紫、蓝、红三色的对称渐变，色彩过渡更丰富，视觉效果更强烈。
+                    </p>
+                </div>
+                
+                <!-- 纯色对称渐变 -->
+                <div class="bg-white rounded-xl shadow-lg p-6 content-card">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">纯色对称渐变</h3>
+                    <div class="h-40 rounded-lg mb-4 overflow-hidden">
+                        <div class="h-full edge-gradient-solid"></div>
+                    </div>
+                    <p class="text-gray-600 text-sm">
+                        单一颜色的对称渐变，从边缘紫色向内容区域逐渐变淡，简洁而优雅。
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 响应式设计说明 -->
+        <div class="bg-gradient-to-r from-purple-50 to-red-50 rounded-2xl p-8 mb-16 border border-purple-200">
+            <div class="flex flex-col lg:flex-row items-center">
+                <div class="lg:w-1/3 mb-8 lg:mb-0 lg:pr-8">
+                    <div class="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-red-500 flex items-center justify-center mx-auto lg:mx-0">
+                        <i class="fas fa-mobile-alt text-white text-3xl"></i>
+                    </div>
+                </div>
+                <div class="lg:w-2/3">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-4 text-center lg:text-left">响应式边缘渐变</h3>
+                    <p class="text-gray-700 mb-6">
+                        在移动设备上，边缘渐变区域会自动调整宽度，确保在小屏幕上内容区域依然清晰可读。
+                        渐变比例保持不变，但可见的渐变区域会根据屏幕宽度自动缩放，提供一致的设计体验。
+                    </p>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="text-center lg:text-left">
+                            <div class="text-purple-600 font-bold text-lg">桌面端</div>
+                            <div class="text-gray-600">渐变宽度：~300px/侧</div>
+                        </div>
+                        <div class="text-center lg:text-left">
+                            <div class="text-purple-600 font-bold text-lg">移动端</div>
+                            <div class="text-gray-600">渐变宽度：~100px/侧</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 实现代码片段 -->
+        <div class="bg-gray-900 rounded-2xl p-6 mb-16 overflow-hidden">
+            <div class="flex items-center mb-4">
+                <div class="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+                <div class="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
+                <div class="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                <span class="text-gray-300 ml-2 font-mono text-sm">对称渐变CSS代码</span>
+            </div>
+            <pre class="text-gray-200 font-mono text-sm overflow-x-auto">
+<code>.edge-gradient-symmetric {
+  background: linear-gradient(
+    90deg,
+    /* 左侧渐变 */
+    rgba(139, 92, 246, 1) 0%,
+    rgba(139, 92, 246, 0.8) 15%,
+    rgba(59, 130, 246, 0.6) 30%,
+    rgba(239, 68, 68, 0.3) 40%,
+    rgba(255, 255, 255, 0) 50%,
+    /* 右侧渐变（对称） */
+    rgba(255, 255, 255, 0) 50%,
+    rgba(239, 68, 68, 0.3) 60%,
+    rgba(59, 130, 246, 0.6) 70%,
+    rgba(139, 92, 246, 0.8) 85%,
+    rgba(139, 92, 246, 1) 100%
+  );
+}</code>
+            </pre>
+        </div>
+        
+        <!-- 页脚 -->
+        <footer class="text-center py-8 border-t border-gray-200">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-8">
+                <div class="mb-6 md:mb-0">
+                    <h4 class="text-lg font-bold text-gray-800 mb-2">对称边缘渐变设计</h4>
+                    <p class="text-gray-600">使用 <span class="font-bold text-purple-600">Tailwind 4</span> 实现</p>
+                </div>
+                
+                <div class="flex space-x-6">
+                    <a href="#" class="text-gray-500 hover:text-purple-600 transition-colors">
+                        <i class="fab fa-github text-2xl"></i>
+                    </a>
+                    <a href="#" class="text-gray-500 hover:text-blue-600 transition-colors">
+                        <i class="fab fa-codepen text-2xl"></i>
+                    </a>
+                    <a href="#" class="text-gray-500 hover:text-red-600 transition-colors">
+                        <i class="fab fa-twitter text-2xl"></i>
+                    </a>
+                </div>
+            </div>
+            
+            <div class="max-w-md mx-auto h-2 rounded-full edge-gradient-simple mb-6"></div>
+            
+            <p class="text-gray-500 text-sm">
+                渐变设计：从页面边缘到内容区域的对称紫蓝红渐变 • 
+                两侧渐变效果完全对称 • 白色主体内容区域
+            </p>
+        </footer>
+    </div>
+    
+    <!-- 移动端适配的渐变层 -->
+    <div class="lg:hidden fixed inset-0 edge-gradient-simple z-0 pointer-events-none"></div>
+</body>
+</html>

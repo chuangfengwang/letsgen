@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI Model Playground</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#11a4d4",
+                        "primary-dark": "#0c8ab3",
+                        "background-light": "#f7f7f8",
+                        "background-dark": "#22252a",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#1a1d21",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"],
+                        "tech": ["Space Grotesk", "sans-serif"],
+                        "mono": ["Fira Code", "monospace"],
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }.gradient-border-top {
+            position: relative;
+        }
+        .gradient-border-top::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, rgba(17, 164, 212, 0.2) 0%, rgba(17, 164, 212, 1) 50%, rgba(17, 164, 212, 0.2) 100%);
+            z-index: 10;
+        }
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #11a4d4;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 0 0 1px #11a4d4;
+        }
+        .dark .range-slider::-webkit-slider-thumb {
+             border: 2px solid #1a1d21;
+        }
+        .typing-dot {
+            animation: typing 1.4s infinite ease-in-out both;
+        }
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="flex h-screen w-full bg-background-light dark:bg-background-dark font-display text-slate-800 dark:text-slate-200 overflow-hidden selection:bg-primary/20">
+<aside class="flex w-20 lg:w-64 flex-col justify-between bg-surface-light dark:bg-surface-dark border-r border-slate-200 dark:border-slate-800 transition-all duration-300 z-30 shadow-sm shrink-0">
+<div class="flex flex-col h-full">
+<div class="flex items-center gap-3 px-6 py-5 border-b border-transparent">
+<div class="bg-gradient-to-br from-primary to-cyan-600 rounded-xl size-8 shrink-0 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-primary/30">
+<span class="material-symbols-outlined text-[20px]">hub</span>
+</div>
+<div class="flex flex-col hidden lg:flex">
+<h1 class="text-slate-900 dark:text-white text-base font-bold leading-none tracking-tight font-tech">Nexus<span class="text-primary">Gate</span></h1>
+<p class="text-slate-400 text-xs font-medium leading-normal mt-1">Admin Portal</p>
+</div>
+</div>
+<nav class="flex flex-col gap-1.5 px-3 mt-4 flex-1 overflow-y-auto">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors">grid_view</span>
+<span class="text-sm font-medium hidden lg:block">My Overview</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-400 border border-primary/20 shadow-sm shadow-primary/5" href="#">
+<span class="material-symbols-outlined fill-1">smart_toy</span>
+<span class="text-sm font-bold hidden lg:block">Playground</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors">deployed_code</span>
+<span class="text-sm font-medium hidden lg:block">Models</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors">badge</span>
+<span class="text-sm font-medium hidden lg:block">My Accounts</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors">receipt_long</span>
+<span class="text-sm font-medium hidden lg:block">My Logs</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors">settings</span>
+<span class="text-sm font-medium hidden lg:block">My Settings</span>
+</a>
+</nav>
+<div class="p-4 border-t border-slate-200 dark:border-slate-800 mt-auto">
+<button class="w-full flex items-center justify-center gap-2 p-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition-all border border-dashed border-slate-300 dark:border-slate-700 hover:border-slate-400">
+<span class="material-symbols-outlined text-[20px]">switch_account</span>
+<span class="text-sm font-medium hidden lg:block">Switch Admin</span>
+</button>
+</div>
+</div>
+</aside>
+<div class="flex-1 flex flex-col h-full overflow-hidden relative">
+<header class="h-16 flex items-center justify-between px-6 bg-surface-light dark:bg-surface-dark border-b border-slate-200 dark:border-slate-800 shrink-0 z-20">
+<div class="flex items-center gap-4">
+<h2 class="text-lg font-bold text-slate-900 dark:text-white font-display">AI Model Playground</h2>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-400 hover:text-primary transition-colors rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 relative">
+<span class="material-symbols-outlined text-[22px]">notifications</span>
+<span class="absolute top-2 right-2 size-2 bg-red-500 rounded-full border border-white dark:border-slate-800"></span>
+</button>
+<div class="h-8 w-px bg-slate-200 dark:bg-slate-700 mx-1 hidden sm:block"></div>
+<div class="flex items-center gap-3 cursor-pointer group">
+<div class="flex flex-col text-right hidden sm:flex">
+<p class="text-sm font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">Alex Morgan</p>
+<p class="text-xs text-slate-500 font-medium">Admin</p>
+</div>
+<div class="bg-center bg-no-repeat bg-cover rounded-full size-9 ring-2 ring-slate-100 dark:ring-slate-700 group-hover:ring-primary/50 transition-all" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCVgJIWfNmar9NbnRhbIqP3VL2sL-26kXzcUYaBFASEe3DSvqtuhZs_GrWe-XwfnWe1sa-MgZI8lFKwewR3QbQ49A1Bi3HoyibRJcANcHYIxdfBm-uMwE64y9AAMEzA0OA9LXrgJi2jNUcapptLHSERd8ejA7DUOoA_o7xC2eKGYPCuiOm5jAXhVJmKk2gPgO1elj7Nbkd07jppk_fpTLFjxOQe_LnvymHxwTm_HQHzCmsgD3B0wDh3mC7naB6FSUzBlxy-56KBy8RK');"></div>
+<span class="material-symbols-outlined text-slate-400 text-sm hidden sm:block">expand_more</span>
+</div>
+</div>
+</header>
+<main class="flex-1 flex gap-4 p-4 overflow-hidden relative bg-background-light dark:bg-background-dark">
+<section class="hidden md:flex flex-col w-72 bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden gradient-border-top">
+<div class="p-5 border-b border-slate-100 dark:border-slate-800/50">
+<h2 class="text-lg font-bold font-tech text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">tune</span>
+                        Configuration
+                    </h2>
+</div>
+<div class="p-4 flex flex-col gap-4 overflow-y-auto custom-scrollbar">
+<div class="flex flex-col gap-1.5">
+<label class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 pl-1">Provider Account</label>
+<div class="relative">
+<select class="w-full appearance-none bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg py-2.5 px-3 pr-10 text-sm font-medium text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow">
+<option>OpenAI - Production</option>
+<option selected="">OpenAI - Dev Sandbox</option>
+<option>Anthropic - Enterprise</option>
+<option>Azure OpenAI - East US</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-sm">expand_more</span>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 pl-1">Model</label>
+<div class="relative">
+<select class="w-full appearance-none bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg py-2.5 px-3 pr-10 text-sm font-medium text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow">
+<option>gpt-4-turbo</option>
+<option selected="">gpt-4o</option>
+<option>claude-3-opus</option>
+<option>llama-3-70b-instruct</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-sm">expand_more</span>
+</div>
+</div>
+<hr class="border-slate-100 dark:border-slate-800 my-2"/>
+<div class="flex items-center justify-between pl-1">
+<h3 class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">History</h3>
+<button class="text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+</button>
+</div>
+<div class="flex flex-col gap-1">
+<button class="flex flex-col gap-1 w-full text-left p-3 rounded-lg bg-primary/10 border border-primary/20 dark:bg-primary/10 group transition-all">
+<div class="flex items-center justify-between w-full">
+<span class="text-sm font-bold text-slate-800 dark:text-slate-100 truncate w-32">SQL Optimization</span>
+<span class="text-[10px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded">Now</span>
+</div>
+<p class="text-xs text-slate-500 dark:text-slate-400 truncate">Analyze this PostgreSQL query for...</p>
+</button>
+<button class="flex flex-col gap-1 w-full text-left p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 group transition-all">
+<div class="flex items-center justify-between w-full">
+<span class="text-sm font-medium text-slate-700 dark:text-slate-300 truncate w-32">Marketing Copy v2</span>
+<span class="text-[10px] text-slate-400">2h ago</span>
+</div>
+<p class="text-xs text-slate-500 dark:text-slate-500 truncate">Generate 5 variants of the landing...</p>
+</button>
+<button class="flex flex-col gap-1 w-full text-left p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 group transition-all">
+<div class="flex items-center justify-between w-full">
+<span class="text-sm font-medium text-slate-700 dark:text-slate-300 truncate w-32">Regex Helper</span>
+<span class="text-[10px] text-slate-400">Yesterday</span>
+</div>
+<p class="text-xs text-slate-500 dark:text-slate-500 truncate">Match email addresses excluding...</p>
+</button>
+<button class="flex flex-col gap-1 w-full text-left p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 group transition-all">
+<div class="flex items-center justify-between w-full">
+<span class="text-sm font-medium text-slate-700 dark:text-slate-300 truncate w-32">JSON Parser</span>
+<span class="text-[10px] text-slate-400">2d ago</span>
+</div>
+<p class="text-xs text-slate-500 dark:text-slate-500 truncate">Fix the syntax error in this...</p>
+</button>
+</div>
+</div>
+</section>
+<section class="flex-1 flex flex-col bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden relative gradient-border-top">
+<div class="h-16 shrink-0 flex items-center justify-between px-6 border-b border-slate-100 dark:border-slate-800/50 bg-surface-light/80 dark:bg-surface-dark/80 backdrop-blur-sm z-10">
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center size-8 rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
+<span class="material-symbols-outlined text-lg">code</span>
+</div>
+<div>
+<h2 class="text-sm font-bold text-slate-900 dark:text-white">SQL Optimization Assistant</h2>
+<div class="flex items-center gap-2">
+<div class="size-1.5 rounded-full bg-green-500"></div>
+<p class="text-xs text-slate-500 dark:text-slate-400">gpt-4o • <span class="text-slate-400">4k context</span></p>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" title="Clear Chat">
+<span class="material-symbols-outlined text-[20px]">delete_sweep</span>
+</button>
+<button class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" title="Export">
+<span class="material-symbols-outlined text-[20px]">ios_share</span>
+</button>
+<button class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors lg:hidden" title="Settings">
+<span class="material-symbols-outlined text-[20px]">tune</span>
+</button>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth" id="chat-stream">
+<div class="flex justify-center mb-8">
+<div class="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-xs px-3 py-1.5 rounded-full border border-slate-100 dark:border-slate-700/50">
+                            Session started today at 10:23 AM
+                        </div>
+</div>
+<div class="flex w-full flex-row-reverse gap-4 group">
+<div class="shrink-0 size-8 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden shadow-sm">
+<img alt="User avatar" class="w-full h-full object-cover" data-alt="User avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXcwqO2ObYZGhEv2Soqo4LNTxvR5BKBEQuNEnDRQszXR3MsjEzpYZY4rhZZc9DwAnb2lsBDSmdci_LhP_BejBm9Egixc3xYaiNL-f0AR-gOGxciqAL4I2zw7zCkMEnoO4ROg7srGmDX8uH5k2Cc4Omly7nbszusL8ybQd5ZiGI4Iiz0kXmyMsyBYlhqoHgCzokdopX0I2T5plUeYBkD-lTgDmdPtqShOEaY3gmswM83xjlbeCXHIGdrF3JL-yjXqf3Kf6r2OOuhgjZ"/>
+</div>
+<div class="flex flex-col gap-1 items-end max-w-[80%]">
+<div class="px-4 py-3 bg-primary text-white rounded-2xl rounded-tr-sm shadow-md shadow-primary/10">
+<p class="text-sm leading-relaxed">I have a slow SQL query in my PostgreSQL database. It joins three large tables: users, orders, and order_items. Can you help me optimize it?</p>
+</div>
+<span class="text-[10px] text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">10:24 AM</span>
+</div>
+</div>
+<div class="flex w-full gap-4 group">
+<div class="shrink-0 size-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-sm">
+<span class="material-symbols-outlined text-sm">smart_toy</span>
+</div>
+<div class="flex flex-col gap-1 items-start max-w-[85%]">
+<div class="px-5 py-4 bg-white dark:bg-[#202328] border border-slate-200 dark:border-slate-700/50 rounded-2xl rounded-tl-sm shadow-sm">
+<p class="text-sm text-slate-700 dark:text-slate-200 leading-relaxed mb-3">I'd be happy to help. To give you the best advice, I'll need to see the current query and the schema structure (indexes, etc.).</p>
+<p class="text-sm text-slate-700 dark:text-slate-200 leading-relaxed mb-3">However, generally speaking, here are a few things to look for:</p>
+<ul class="list-disc list-inside text-sm text-slate-700 dark:text-slate-200 mb-4 space-y-1">
+<li>Ensure foreign keys are indexed.</li>
+<li>Avoid <code class="bg-slate-100 dark:bg-slate-700 px-1 py-0.5 rounded text-xs font-mono text-pink-500">SELECT *</code> if you only need specific columns.</li>
+<li>Check if you can use <code class="bg-slate-100 dark:bg-slate-700 px-1 py-0.5 rounded text-xs font-mono text-pink-500">EXPLAIN ANALYZE</code> to identify bottlenecks.</li>
+</ul>
+<p class="text-sm text-slate-700 dark:text-slate-200 leading-relaxed">Please paste your query below.</p>
+</div>
+<div class="flex items-center gap-3 pl-1">
+<span class="text-[10px] text-slate-400">10:24 AM</span>
+<div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" title="Copy"><span class="material-symbols-outlined text-[16px]">content_copy</span></button>
+<button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" title="Regenerate"><span class="material-symbols-outlined text-[16px]">refresh</span></button>
+</div>
+</div>
+</div>
+</div>
+<div class="flex w-full flex-row-reverse gap-4 group">
+<div class="shrink-0 size-8 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden shadow-sm">
+<img alt="User avatar" class="w-full h-full object-cover" data-alt="User avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBtKcHasNSHw-1sMkVMU8WawfILLnmvqBwuma6ueu6egCwfiHW3ICS9myzm14et-qEfVPJTj67S4-4eAuw3IAs_jtuFWmdKt3NyhBP9hM2kUJpL1yUKGVKJ5D9S-VtYKI_Mq7NKCEa6O8kKO5I2seHHd-YCBsf9vPuslvflBvX9XEEm053drHKLcCWRD55iSaNwr3jiLjUXOG5hUDVepez8_hNy09u3H4ycooY4d3zJS-cKg4SvOYhVHsCEy1B6Ai-SyBoTSBm-epj"/>
+</div>
+<div class="flex flex-col gap-1 items-end max-w-[80%]">
+<div class="px-4 py-3 bg-primary text-white rounded-2xl rounded-tr-sm shadow-md shadow-primary/10">
+<p class="text-sm leading-relaxed mb-2">Here is the query:</p>
+<div class="bg-primary-dark/30 rounded p-2 text-xs font-mono text-white/90 overflow-x-auto border border-white/10">
+<pre><code>SELECT *
+FROM orders o
+JOIN users u ON o.user_id = u.id
+JOIN order_items oi ON o.id = oi.order_id
+WHERE o.created_at &gt; '2023-01-01'
+ORDER BY o.created_at DESC;</code></pre>
+</div>
+</div>
+<span class="text-[10px] text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">10:25 AM</span>
+</div>
+</div>
+<div class="flex w-full gap-4">
+<div class="shrink-0 size-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-sm">
+<span class="material-symbols-outlined text-sm">smart_toy</span>
+</div>
+<div class="flex flex-col gap-1 items-start max-w-[85%]">
+<div class="px-5 py-4 bg-white dark:bg-[#202328] border border-slate-200 dark:border-slate-700/50 rounded-2xl rounded-tl-sm shadow-sm flex items-center gap-1">
+<div class="size-2 bg-primary rounded-full typing-dot"></div>
+<div class="size-2 bg-primary rounded-full typing-dot"></div>
+<div class="size-2 bg-primary rounded-full typing-dot"></div>
+</div>
+<span class="text-[10px] text-primary font-medium animate-pulse">Thinking...</span>
+</div>
+</div>
+</div>
+<div class="p-4 bg-white dark:bg-surface-dark/95 backdrop-blur border-t border-slate-200 dark:border-slate-800">
+<div class="flex flex-col gap-2 relative bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/50 transition-all shadow-inner">
+<textarea class="w-full bg-transparent border-none focus:ring-0 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 p-4 min-h-[56px] resize-none" placeholder="Type your message here... Use Markdown or paste code." rows="1"></textarea>
+<div class="flex items-center justify-between px-2 pb-2">
+<div class="flex items-center gap-1">
+<button class="p-2 text-slate-400 hover:text-primary dark:hover:text-primary rounded-lg transition-colors" title="Attach file">
+<span class="material-symbols-outlined text-[20px]">attach_file</span>
+</button>
+<button class="p-2 text-slate-400 hover:text-primary dark:hover:text-primary rounded-lg transition-colors" title="Upload Image">
+<span class="material-symbols-outlined text-[20px]">image</span>
+</button>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-xs text-slate-400 hidden sm:block">Press <kbd class="font-sans font-semibold bg-white dark:bg-slate-700 px-1 py-0.5 rounded border border-slate-200 dark:border-slate-600">Enter</kbd> to send</span>
+<button class="bg-primary hover:bg-primary-dark text-white p-2 rounded-lg transition-colors shadow-lg shadow-primary/30 flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">arrow_upward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="hidden lg:flex flex-col w-80 bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden gradient-border-top">
+<div class="p-5 border-b border-slate-100 dark:border-slate-800/50 flex justify-between items-center">
+<h2 class="text-lg font-bold font-tech text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">display_settings</span>
+                        Parameters
+                    </h2>
+<button class="text-xs font-medium text-slate-400 hover:text-primary transition-colors">Reset</button>
+</div>
+<div class="flex-1 overflow-y-auto p-5 space-y-8 custom-scrollbar">
+<div class="space-y-2">
+<div class="flex items-center justify-between">
+<label class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">System Instruction</label>
+<button class="text-slate-400 hover:text-primary"><span class="material-symbols-outlined text-[16px]">open_in_full</span></button>
+</div>
+<textarea class="w-full h-32 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg p-3 text-xs text-slate-700 dark:text-slate-300 font-mono resize-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all placeholder:text-slate-400" placeholder="You are a helpful assistant...">You are an expert Database Administrator specializing in PostgreSQL performance tuning. Be concise and prioritize indexing strategies.</textarea>
+</div>
+<div class="space-y-6">
+<div class="space-y-3">
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-1.5 group relative cursor-help">
+<label class="text-sm font-semibold text-slate-700 dark:text-slate-200">Temperature</label>
+<span class="material-symbols-outlined text-[14px] text-slate-400">info</span>
+</div>
+<input class="w-14 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-right p-1 text-sm text-slate-700 dark:text-slate-200 font-mono focus:ring-1 focus:ring-primary" max="2" min="0" step="0.1" type="number" value="0.7"/>
+</div>
+<input class="range-slider w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer" max="2" min="0" step="0.1" type="range" value="0.7"/>
+<div class="flex justify-between text-[10px] text-slate-400 font-medium">
+<span>Precise</span>
+<span>Creative</span>
+</div>
+</div>
+<div class="space-y-3">
+<div class="flex justify-between items-center">
+<label class="text-sm font-semibold text-slate-700 dark:text-slate-200">Top P</label>
+<input class="w-14 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-right p-1 text-sm text-slate-700 dark:text-slate-200 font-mono focus:ring-1 focus:ring-primary" max="1" min="0" step="0.1" type="number" value="1.0"/>
+</div>
+<input class="range-slider w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer" max="1" min="0" step="0.05" type="range" value="1.0"/>
+</div>
+<div class="space-y-3">
+<div class="flex justify-between items-center">
+<label class="text-sm font-semibold text-slate-700 dark:text-slate-200">Max Length</label>
+<input class="w-16 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-right p-1 text-sm text-slate-700 dark:text-slate-200 font-mono focus:ring-1 focus:ring-primary" max="4096" min="1" step="1" type="number" value="2048"/>
+</div>
+<input class="range-slider w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer" max="4096" min="1" step="1" type="range" value="2048"/>
+</div>
+</div>
+<div class="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+<div class="flex items-center justify-between">
+<label class="text-sm font-medium text-slate-700 dark:text-slate-300">Stream Response</label>
+<button aria-checked="true" class="bg-primary relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" role="switch" type="button">
+<span aria-hidden="true" class="translate-x-4 pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+</button>
+</div>
+<div class="flex items-center justify-between">
+<label class="text-sm font-medium text-slate-700 dark:text-slate-300">JSON Mode</label>
+<button aria-checked="false" class="bg-slate-200 dark:bg-slate-700 relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" role="switch" type="button">
+<span aria-hidden="true" class="translate-x-0 pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+</button>
+</div>
+</div>
+<div class="mt-4 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-100 dark:border-indigo-800/30">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-indigo-500 text-[16px]">paid</span>
+<p class="text-xs font-bold text-indigo-700 dark:text-indigo-300">Cost Estimate</p>
+</div>
+<div class="flex justify-between text-xs text-indigo-600/80 dark:text-indigo-300/80">
+<span>Per 1k tokens</span>
+<span class="font-mono">$0.03</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+</div>
+
+</body></html>

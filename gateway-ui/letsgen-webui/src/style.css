@@ -1,1 +1,16 @@
 @import "tailwindcss";
+
+@theme {
+    /* 定义颜色：生成 text-brand, bg-brand, border-brand */
+    --color-brand: #3b82f6;
+    --color-accent: oklch(0.71 0.19 314);
+
+    /* 定义字体：生成 font-heading */
+    --font-heading: "Inter", sans-serif;
+
+    /* 定义间距：生成 m-reg, p-reg, gap-reg */
+    --spacing-reg: 2rem;
+
+    /* 定义断点：生成 tablet:grid-cols-2 */
+    --breakpoint-tablet: 640px;
+}
