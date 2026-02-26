@@ -5,6 +5,8 @@ CREATE DATABASE letsgen_db
 ;
 ALTER DATABASE letsgen_db SET timezone = 'Asia/Shanghai';
 
+\connect letsgen_db
+
 -- 用户表
 create table letsgen_user
 (
@@ -290,7 +292,7 @@ comment on column letsgen_provider_endpoint.create_at is '创建时间';
 comment on column letsgen_provider_endpoint.update_at is '更新时间';
 
 -- 模型-接入点关系表 letsgen_model_endpoint_rlt
-drop table letsgen_model_endpoint_rlt;
+-- drop table letsgen_model_endpoint_rlt;
 create table letsgen_model_endpoint_rlt
 (
     id                BIGSERIAL   not null,
@@ -328,7 +330,85 @@ comment on column letsgen_model_endpoint_rlt.note is '模型-接入点备注';
 comment on column letsgen_model_endpoint_rlt.create_at is '创建时间';
 comment on column letsgen_model_endpoint_rlt.update_at is '更新时间';
 
+-- 预算表
+create table letsgen_budget
+(
+    id                BIGSERIAL       not null,
+    budget_name       varchar(50)     not null default '',           -- 预算名称
+    budget_start_at   TIMESTAMPTZ     not null default '2000-01-01', -- 预算开始时间
+    budget_end_at     TIMESTAMPTZ     not null default '9999-12-31', -- 预算结束时间
+    currency_type     varchar(20)     not null default '',           -- 预算币种类型: USD,CNY,EUR等
+    budget_status     varchar(10)     not null default '',           -- 预算状态: ok, disabled
+    total_amount      numeric(20, 12) not null default 0.0,          -- 预算总金额
+    applied_amount    numeric(20, 12) not null default 0.0,          -- 已申请使用过的金额
+    settled_amount    numeric(20, 12) not null default 0.0,          -- 已结算过的金额
+    apply_user_name   varchar(50)     not null default '',           -- 申请人用户名
+    audit_user_name   varchar(50)     not null default '',           -- 审核人用户名
+    approve_status    varchar(10)     not null default '',           -- 预算审核状态: pending, approved, rejected
+    approve_opinion   text            not null default '',           -- 审核意见
+    apply_time        TIMESTAMPTZ     not null default '2000-01-01',        -- 预算申请时间
+    last_approve_time TIMESTAMPTZ     not null default '2000-01-01',        -- 预算最后审核时间
+    note              text            not null default '',
+    create_at         TIMESTAMPTZ     not null default now(),
+    update_at         TIMESTAMPTZ     not null default now(),
+    PRIMARY KEY (id),
+    CONSTRAINT uq_letsgen_budget_name UNIQUE (budget_name)
+);
+
+-- 预算管理员关系表 letsgen_budget_admin_rlt
+create table letsgen_budget_admin_rlt
+(
+    id          BIGSERIAL   not null,
+    budget_name varchar(50) not null default '',          -- 预算名称
+    user_name   varchar(50) not null default '',          -- 财务管理员用户名
+    create_at   TIMESTAMPTZ not null default now(),
+    update_at   TIMESTAMPTZ not null default now(),
+    PRIMARY KEY (id),
+    CONSTRAINT uq_letsgen_budget_admin_rlt UNIQUE (budget_name, user_name)
+);
+
+-- 账号组表
+create table letsgen_account_group
+(
+    id           BIGSERIAL   not null,
+    group_name   varchar(50) not null default '', -- 账号组名称
+    group_status varchar(10) not null default '', -- 账号组状态: ok, disabled
+    note         text        not null default '',
+    create_at    TIMESTAMPTZ not null default now(),
+    update_at    TIMESTAMPTZ not null default now(),
+    PRIMARY KEY (id),
+    CONSTRAINT uq_letsgen_account_group_name UNIQUE (group_name)
+);
+
+-- 账号组管理员关系表 letsgen_account_group_admin_rlt
+create table letsgen_account_group_admin_rlt
+(
+    id         BIGSERIAL   not null,
+    group_name varchar(50) not null default '',            -- 账号组名称
+    user_name  varchar(50) not null default '',            -- 管理员用户名
+    user_role  varchar(20) not null default 'group_admin', -- 管理员在账号组下的角色: group_admin, group_secure, group_financial
+    create_at  TIMESTAMPTZ not null default now(),
+    update_at  TIMESTAMPTZ not null default now(),
+    PRIMARY KEY (id),
+    CONSTRAINT uq_letsgen_account_group_admin_rlt UNIQUE (group_name, user_name)
+);
+
+-- 账号组-账号关系表 letsgen_account_group_rlt
+create table letsgen_account_group_rlt
+(
+    id           BIGSERIAL   not null,
+    group_name   varchar(50) not null default '', -- 账号组名称
+    account_name varchar(50) not null default '', -- 计费账号名
+    create_at    TIMESTAMPTZ not null default now(),
+    update_at    TIMESTAMPTZ not null default now(),
+    PRIMARY KEY (id),
+    CONSTRAINT uq_letsgen_account_group_rlt UNIQUE (account_name, group_name)
+);
+
 -- 用户(n)-(n)计费账号(1)-(n)ApiKey
 -- 账号(1)-(n)钱包, 每个币种一个钱包
--- 账号(n)-(n)模型, 关系表里加: 模态权限, 限流rpm/tpm/concurrent
+-- 账号(n)-(n)模型, 限流rpm/tpm/concurrent, ??关系表里加: 模态权限
 -- 模型信息表(n)-(n)接入点(n)-(n)接入凭证
+-- 账号(n)-(1)账号组(n)-(n)预算
+-- 财务管理员(n)-(n)预算
+-- 账号组管理员(n)-(n)账号组

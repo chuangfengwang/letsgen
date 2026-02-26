@@ -47,12 +47,12 @@ class LlmTransferService:
         """对流式响应 chunk 转换返回结果"""
         raise NotImplementedError()
 
-    async def fetch_price(self, model_id: str) -> dict:
-        """获取模型的价格信息"""
+    async def fetch_price(self, model_id: str) -> Tuple[dict, str]:
+        """获取模型的价格信息和计费策略"""
         raise NotImplementedError()
 
-    async def update_cost(self, context: LlmRequestContext) -> float:
-        """更新本次调用的费用"""
+    async def update_cost(self, context: LlmRequestContext) -> Tuple[float, str]:
+        """更新本次调用的费用和货币类型"""
         raise NotImplementedError()
 
     def parse_model_and_stream(self, body: dict) -> Tuple[str, bool]:
@@ -81,8 +81,8 @@ class LlmTransferService:
         # 计费
         usage = self.parse_usage(context)
         context.usage = usage
-        context.price = await self.fetch_price(model_id)
-        context.request_cost = await self.update_cost(context)
+        context.price, context.pay_strategy = await self.fetch_price(model_id)
+        context.request_cost, context.pay_currency = await self.update_cost(context)
         context.mark_event_dt("update_cost_end")
         # 用量统计
         await self.db_stat_request(context)

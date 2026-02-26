@@ -5,6 +5,10 @@ CREATE DATABASE letsgen_log
 ;
 ALTER DATABASE letsgen_log SET timezone = 'Asia/Shanghai';
 
+\connect letsgen_log
+
+SET pg_textsearch.default_limit = 1500;
+
 -- 调用统计表 llm_api_model_call_stat
 create table llm_api_model_call_stat
 (

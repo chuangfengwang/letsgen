@@ -29,6 +29,7 @@ from letsgen.entity.llm_entity import LlmRequestContext
 from letsgen.exceptions import error_class
 from letsgen.service.llm_api_transfer import LlmTransferService
 from letsgen.service.log_content_service import LogContentService
+from letsgen.service.price_service import calculate_fee
 from letsgen.system.global_service import log_content_service
 from letsgen.utils import password_util
 from letsgen.utils.function_util import all_param_expect_kwargs
@@ -355,16 +356,108 @@ class OpenAiChatCompletionsService(LlmTransferService):
         # 6. 把当前 chunk 记作最后一个 chunk
         context.end_chunk = chunk_json
 
-    async def fetch_price(self, model_id: str) -> dict:
-        """获取模型的价格信息"""
-        return {
-            "prompt_tokens": 0.001,
-            "completion_tokens": 0.002,
+    async def fetch_price(self, model_id: str) -> Tuple[dict, str]:
+        """获取模型的价格信息
+        :return (dict, str) 其中 dict 是各类token的计费单价, str 是计费方式
+        """
+        price = {
+            "currency": "USD",  # 计价货币单位
+            "strategy": "input-tiered",  # 计价策略, 当前仅支持 input-tiered, 即根据输入长度分层计价
+            "unit": "1M-token",  # 计价单位, 通常是 1M-token, 表示每百万token
+            "tiers": [  # 分层计价的层级定义
+                {
+                    "range": "[0,200k]",  # 输入长度范围. k:1024, m:1024*1024
+                    "input_text": 2.0,  # 输入文本 token 的价格
+                    "input_image": 2.0,  # 输入图像 token 的价格
+                    "input_video": 2.0,  # 输入视频 token 的价格
+                    "input_audio": 2.0,  # 输入音频 token 的价格
+                    "output_text": 12.0,  # 输出文本 token 的价格
+                    "output_image": 120.0,  # 输出图像 token 的价格
+                    "cached": {
+                        "strategy": "ttl",  # 缓存计价策略: 当前仅支持 ttl, 即根据缓存的 ttl 长短分层计价
+                        "ttl": [
+                            {
+                                "range": "(0,5m]",  # ttl 范围. 5m 表示 5分钟, 1h 表示 1小时
+                                "read_text": 0.5,  # 读取文本缓存 token 的价格
+                                "read_image": 0.5,  # 读取图像缓存 token 的价格
+                                "read_video": None,  # 不支持这种输入
+                                "read_audio": None,  # 不支持这种输入
+                                "write_text": 6.25,  # 写入文本缓存 token 的价格
+                                "write_image": 6.25,  # 写入图像缓存 token 的价格
+                                "write_video": None,  # 不支持这种输入
+                                "write_audio": None,  # 不支持这种输入
+                            },
+                            {
+                                "range": "(5m,1h]",  # ttl 范围. 5m 表示 5分钟, 1h 表示 1小时
+                                "read_text": 0.5,  # 读取文本缓存 token 的价格
+                                "read_image": 0.5,  # 读取图像缓存 token 的价格
+                                "read_video": None,  # 不支持这种输入
+                                "read_audio": None,  # 不支持这种输入
+                                "write_text": 10,  # 写入文本缓存 token 的价格
+                                "write_image": 10,  # 写入图像缓存 token 的价格
+                                "write_video": None,  # 不支持这种输入
+                                "write_audio": None,  # 不支持这种输入
+                            }
+                        ]
+                    }
+                },
+                {
+                    "range": "(200k,inf)",  # 输入长度范围, inf 表示无穷大, 无所谓开闭区间
+                    "input_text": 4.0,  # 输入文本 token 的价格
+                    "input_image": 4.0,  # 输入图像 token 的价格
+                    "input_video": 4.0,  # 输入视频 token 的价格
+                    "input_audio": 4.0,  # 输入音频 token 的价格
+                    "output_text": 18.0,  # 输出文本 token 的价格
+                    "output_image": None,  # 不存在这种情况
+                    "cached": {
+                        "strategy": "ttl",  # 缓存计价策略: 当前仅支持 ttl, 即根据缓存的 ttl 长短分层计价
+                        "ttl": [
+                            {
+                                "range": "(0,5m]",  # ttl 范围. 5m 表示 5分钟, 1h 表示 1小时
+                                "read_text": 0.5,  # 读取文本缓存 token 的价格
+                                "read_image": 0.5,  # 读取图像缓存 token 的价格
+                                "read_video": None,  # 不支持这种输入
+                                "read_audio": None,  # 不支持这种输入
+                                "write_text": 6.25,  # 写入文本缓存 token 的价格
+                                "write_image": 6.25,  # 写入图像缓存 token 的价格
+                                "write_video": None,  # 不支持这种输入
+                                "write_audio": None,  # 不支持这种输入
+                            },
+                            {
+                                "range": "(5m,1h]",  # ttl 范围. 5m 表示 5分钟, 1h 表示 1小时
+                                "read_text": 0.5,  # 读取文本缓存 token 的价格
+                                "read_image": 0.5,  # 读取图像缓存 token 的价格
+                                "read_video": None,  # 不支持这种输入
+                                "read_audio": None,  # 不支持这种输入
+                                "write_text": 10,  # 写入文本缓存 token 的价格
+                                "write_image": 10,  # 写入图像缓存 token 的价格
+                                "write_video": None,  # 不支持这种输入
+                                "write_audio": None,  # 不支持这种输入
+                            }
+                        ]
+                    }
+                }
+            ]
         }
+        pay_strategy = "input-tiered"  # 根据输入token长度分层计价
+        return price, pay_strategy
 
-    async def update_cost(self, usage: dict) -> float:
+    async def update_cost(self, context: LlmRequestContext) -> Tuple[float, str]:
         """更新本次调用的费用"""
-        return 0.
+        pay_strategy = context.pay_strategy
+        usage: dict = context.usage
+        price: dict = context.price
+        if pay_strategy == "input-tiered":
+            # 按输入 token 长度阶梯计价
+            cost, currency = calculate_fee(usage, price, cached_ttl=None)
+            # todo: 更新钱包余额
+
+            return cost, currency
+        else:
+            model_id = context.model_id
+            msg = f"Unsupported pay_strategy type. pay_strategy: {pay_strategy}, model_id: {model_id}"
+            logger.error(msg)
+            raise error_class.AdminConfigError(msg)
 
     def parse_model_and_stream(self, body: dict) -> Tuple[str, bool]:
         """解析 body 中的 model 和 stream 参数"""
@@ -410,12 +503,13 @@ class OpenAiChatCompletionsService(LlmTransferService):
     def parse_usage(self, context: LlmRequestContext) -> dict:
         """解析 usage"""
         if context.is_stream:
-            end_chunk = cast(ChatCompletionChunk, context.end_chunk)
-            usage = end_chunk.usage if hasattr(end_chunk, "usage") and end_chunk.usage is not None else {}
+            end_chunk = cast(dict, context.end_chunk)
+            usage = end_chunk['usage'] if end_chunk.get("usage", {}) else {}
+            return usage
         else:
             response = cast(ChatCompletion, context.provider_response)
             usage = response.usage if hasattr(response, "usage") and response.usage is not None else {}
-        return usage
+            return usage.model_dump()
 
     async def db_stat_request(self, context: LlmRequestContext):
         """请求记录入库"""
@@ -467,98 +561,105 @@ class OpenAiChatCompletionsService(LlmTransferService):
 
     async def db_log_request_content(self, context: LlmRequestContext):
         """请求内容入库"""
-        if not config.enable_request_response_log:
-            return
-        # 记录元数据  ####################################################
+        try:
+            if not config.enable_request_response_log:
+                return
+            # 记录元数据  ####################################################
 
-        # 请求参数
-        log_time = datetime.now()
-        account_name = context.identity.account_name
-        model_id = context.model_id
-        gen_api_path = context.request_path
-        gen_req_id = context.letsgen_req_id
-        gen_trace_id = context.trace_id if context.trace_id else ""
-        interact_mode = "stream" if context.is_stream else "single"
-        provider_name = context.provider_name
-        provider_region = context.provider_region if context.provider_region else ""
+            # 请求参数
+            log_time = datetime.now()
+            account_name = context.identity.account_name
+            model_id = context.model_id
+            gen_api_path = context.request_path
+            gen_req_id = context.letsgen_req_id
+            gen_trace_id = context.trace_id if context.trace_id else ""
+            interact_mode = "stream" if context.is_stream else "single"
+            provider_name = context.provider_name
+            provider_region = context.provider_region if context.provider_region else ""
 
-        origin_param = context.origin_body_param
-        messages = origin_param.get("messages")
-        tools = origin_param.get("tools", [])
-        if messages is not None:
-            del origin_param["messages"]
-        if tools:
-            del origin_param["tools"]
-        request_body_meta = origin_param
+            origin_param = context.origin_body_param
+            messages = origin_param.get("messages")
+            tools = origin_param.get("tools", [])
+            if messages is not None:
+                del origin_param["messages"]
+            if tools:
+                del origin_param["tools"]
+            request_body_meta = origin_param
 
-        # 几个时间
-        request_in_time = context.get_event_dt("request_in")
-        provider_in_time = context.get_event_dt("response_out_start")
-        first_token_time = context.get_event_dt("response_chunk_start")
-        provider_end_time = context.get_event_dt("response_chunk_end")
-        response_out_time = context.get_event_dt("response_out_end")
+            # 几个时间
+            request_in_time = context.get_event_dt("request_in")
+            provider_in_time = context.get_event_dt("response_out_start")
+            first_token_time = context.get_event_dt("response_chunk_start")
+            provider_end_time = context.get_event_dt("response_chunk_end")
+            response_out_time = context.get_event_dt("response_out_end")
 
-        # 响应元数据
-        end_response = context.end_response
-        if context.is_stream:
-            # todo: 解析流式响应
-            provider_response = ChatCompletion.model_validate(end_response)
-            provider_req_id = provider_response.id
-        else:
-            provider_response: ChatCompletion = cast(ChatCompletion, context.provider_response)
-            provider_req_id = provider_response.id
+            # 响应元数据
+            end_response = context.end_response
+            if context.is_stream:
+                # todo: 解析流式响应
+                provider_response = ChatCompletion.model_validate(end_response)
+                provider_req_id = provider_response.id
+            else:
+                provider_response: ChatCompletion = cast(ChatCompletion, context.provider_response)
+                provider_req_id = provider_response.id
 
-        adapter = TypeAdapter(List[Choice])
-        choices = adapter.dump_python(provider_response.choices)
-        reply_body_meta = provider_response.model_dump()
-        del reply_body_meta["choices"]
+            adapter = TypeAdapter(List[Choice])
+            choices = adapter.dump_python(provider_response.choices)
+            reply_body_meta = provider_response.model_dump()
+            del reply_body_meta["choices"]
 
-        meta_log: LlmApiRequestMetaLog = LlmApiRequestMetaLog(
-            log_time=log_time,
-            account_name=account_name,
-            model_id=model_id,
-            gen_api_path=gen_api_path,
-            gen_req_id=gen_req_id,
-            gen_trace_id=gen_trace_id,
-            interact_mode=interact_mode,
-            provider_name=provider_name,
-            provider_region=provider_region,
-            provider_req_id=provider_req_id,
-            request_body_meta=json.dumps(request_body_meta, ensure_ascii=False),
-            reply_body_meta=json.dumps(reply_body_meta, ensure_ascii=False),
-            request_in_time=request_in_time,
-            provider_in_time=provider_in_time,
-            first_token_time=first_token_time,
-            provider_end_time=provider_end_time,
-            response_out_time=response_out_time,
-            **{}
-        )
-        await pg_log_dao.insert_request_meta_log(meta_log)
+            meta_log: LlmApiRequestMetaLog = LlmApiRequestMetaLog(
+                log_time=log_time,
+                account_name=account_name,
+                model_id=model_id,
+                gen_api_path=gen_api_path,
+                gen_req_id=gen_req_id,
+                gen_trace_id=gen_trace_id,
+                interact_mode=interact_mode,
+                provider_name=provider_name,
+                provider_region=provider_region,
+                provider_req_id=provider_req_id,
+                request_body_meta=json.dumps(request_body_meta, ensure_ascii=False),
+                reply_body_meta=json.dumps(reply_body_meta, ensure_ascii=False),
+                request_in_time=request_in_time,
+                provider_in_time=provider_in_time,
+                first_token_time=first_token_time,
+                provider_end_time=provider_end_time,
+                response_out_time=response_out_time,
+                **{}
+            )
+            await pg_log_dao.insert_request_meta_log(meta_log)
 
-        if not config.enable_request_response_content_log:
-            return
-        # 记录请求内容  ###################################################
-        await self.log_content_service.replace_chat_completion_message_param(
-            messages, use_public_url=False, delete_base64_after_upload=True)
+            if not config.enable_request_response_content_log:
+                return
+            # 记录请求内容  ###################################################
+            await self.log_content_service.replace_chat_completion_message_param(
+                messages, use_public_url=False, delete_base64_after_upload=True)
 
-        request_body = {
-            "messages": messages,
-        }
-        if tools:
-            request_body["tools"] = tools
-        reply_body = {
-            "choices": choices,
-        }
-        body_log: LlmApiRequestBodyLog = LlmApiRequestBodyLog(
-            id=meta_log.id,
-            log_time=log_time,
-            account_name=account_name,
-            model_id=model_id,
-            gen_api_path=gen_api_path,
-            interact_mode=interact_mode,
-            request_body=json.dumps(request_body, ensure_ascii=False),
-            request_header="",  # todo: 请求 header
-            reply_body=json.dumps(reply_body, ensure_ascii=False),
-            reply_header="",  # todo: 响应 header
-        )
-        await pg_log_dao.insert_request_body_log(body_log)
+            request_body = {
+                "messages": messages,
+            }
+            if tools:
+                request_body["tools"] = tools
+            reply_body = {
+                "choices": choices,
+            }
+            body_log: LlmApiRequestBodyLog = LlmApiRequestBodyLog(
+                id=meta_log.id,
+                log_time=log_time,
+                account_name=account_name,
+                model_id=model_id,
+                gen_api_path=gen_api_path,
+                interact_mode=interact_mode,
+                request_body=json.dumps(request_body, ensure_ascii=False),
+                request_header="",  # todo: 请求 header
+                reply_body=json.dumps(reply_body, ensure_ascii=False),
+                reply_header="",  # todo: 响应 header
+            )
+            await pg_log_dao.insert_request_body_log(body_log)
+        except Exception as e:
+            logger.error(f"Failed to log request content. gen_req_id: {context.letsgen_req_id}, "
+                         f"model_id: {context.model_id}, "
+                         f"account: {context.identity.account_name}, "
+                         f"request_path: {context.request_path}, "
+                         f"error: {e}", exc_info=True)

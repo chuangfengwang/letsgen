@@ -117,6 +117,44 @@
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
         }
         
+        /* 渐变边框容器 */
+        .gradient-border-container {
+            position: relative;
+            background: white;
+            border-radius: 24px;
+            padding: 4px;
+            overflow: hidden;
+        }
+        
+        .gradient-border-container::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                90deg,
+                rgba(139, 92, 246, 1) 0%,
+                rgba(139, 92, 246, 0.8) 15%,
+                rgba(59, 130, 246, 0.6) 30%,
+                rgba(59, 130, 246, 0.4) 40%,
+                rgba(239, 68, 68, 0.2) 50%,
+                rgba(59, 130, 246, 0.4) 60%,
+                rgba(59, 130, 246, 0.6) 70%,
+                rgba(139, 92, 246, 0.8) 85%,
+                rgba(139, 92, 246, 1) 100%
+            );
+            background-size: 200% 100%;
+            animation: gradient-flow 8s ease infinite;
+            z-index: 0;
+        }
+        
+        .gradient-border-content {
+            position: relative;
+            background: white;
+            border-radius: 20px;
+            z-index: 1;
+            min-height: 100vh;
+        }
+        
         /* 自定义滚动条 */
         ::-webkit-scrollbar {
             width: 10px;
@@ -137,12 +175,12 @@
         }
     </style>
 </head>
-<body class="min-h-screen bg-white overflow-x-hidden">
-    <!-- 对称渐变背景层 -->
-    <div class="fixed inset-0 edge-gradient-tri-color z-0 pointer-events-none"></div>
-    
-    <!-- 主要内容容器 -->
-    <div class="relative z-10 max-w-6xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+<body class="min-h-screen bg-gray-50 overflow-x-hidden flex items-center justify-center p-4 sm:p-8">
+    <!-- 渐变边框容器 -->
+    <div class="gradient-border-container w-full max-w-7xl">
+        <!-- 内容区域 -->
+        <div class="gradient-border-content px-4 sm:px-6 lg:px-8 py-12">
+            <div class="max-w-6xl mx-auto">
         <!-- 头部区域 -->
         <header class="text-center mb-16">
             <div class="inline-block px-6 py-2 rounded-full gradient-badge text-white font-medium mb-6">
@@ -398,9 +436,8 @@
                 两侧渐变效果完全对称 • 白色主体内容区域
             </p>
         </footer>
+            </div>
+        </div>
     </div>
-    
-    <!-- 移动端适配的渐变层 -->
-    <div class="lg:hidden fixed inset-0 edge-gradient-simple z-0 pointer-events-none"></div>
 </body>
 </html>

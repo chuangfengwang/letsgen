@@ -65,6 +65,10 @@ class LlmRequestContext(BaseModel):
 
     # 本次次调用 token 用量
     usage: Any | None = None
+    # 计费方式. input-tiered: 根据输入token长度阶梯计价
+    pay_strategy: str | None = None
+    # 计费货币单位, 例如: USD, CNY
+    pay_currency: str | None = None
     # 价格信息
     price: Dict[str, Any] | None = None
     # 本次花费

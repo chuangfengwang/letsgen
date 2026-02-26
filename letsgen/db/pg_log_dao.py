@@ -1,20 +1,22 @@
 # -*- coding: utf-8 -*-
 """
 # @File    : pg_log_dao.py
-# @Desc    : 
+# @Desc    :
 # @Author  : chuangfeng.wang
 # @Time    : 2025-11-12 22:22
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 from decimal import Decimal
 from typing import List
 
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, AsyncEngine
 from sqlalchemy.sql import text
 from sqlalchemy import select, and_, or_, not_
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.exc import DBAPIError, OperationalError
 
 import letsgen.db.pg_connection as pg_connection
 from letsgen.db.pg_log_entity_auto import LlmApiModelCallStat, LlmApiRequestMetaLog, LlmApiRequestBodyLog
@@ -23,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 async def fetch_model_call_stat(account_name: str) -> List[LlmApiModelCallStat]:
-    """检查是否存在管理员用户"""
+    """一个账号的模型调用量统计查询"""
     db_engine = await pg_connection.async_log_pg_engine()
 
     async_session_local = async_sessionmaker(bind=db_engine, class_=AsyncSession, expire_on_commit=False)
@@ -63,28 +65,23 @@ async def update_call_stat(delta_stat: LlmApiModelCallStat):
     db_engine = await pg_connection.async_log_pg_engine()
 
     async_session_local = async_sessionmaker(bind=db_engine, class_=AsyncSession, expire_on_commit=False)
-    async with async_session_local() as session:
+    async with async_session_local.begin() as session:
         await session.execute(stmt)
-        await session.commit()
-
 
 async def insert_request_meta_log(meta_log: LlmApiRequestMetaLog):
     """插入请求元信息日志"""
     db_engine = await pg_connection.async_log_pg_engine()
     async_session_local = async_sessionmaker(bind=db_engine, class_=AsyncSession, expire_on_commit=False)
-    async with async_session_local() as session:
-        async with session.begin():
-            session.add(meta_log)
-            await session.flush()
-            return meta_log
+    async with async_session_local.begin() as session:
+        session.add(meta_log)
+    return meta_log
 
 
 async def insert_request_body_log(body_log: LlmApiRequestBodyLog):
     """插入请求体日志"""
-    db_engine = await pg_connection.async_log_pg_engine()
+    db_engine: AsyncEngine = await pg_connection.async_log_pg_engine()
     async_session_local = async_sessionmaker(bind=db_engine, class_=AsyncSession, expire_on_commit=False)
-    async with async_session_local() as session:
-        async with session.begin():
-            session.add(body_log)
-            await session.flush()
-            return body_log
+    async with async_session_local.begin() as session:
+        session.add(body_log)
+    return body_log
+
