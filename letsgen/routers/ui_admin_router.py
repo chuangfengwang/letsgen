@@ -15,7 +15,7 @@ import letsgen.service.ui_admin_service as ui_admin_service
 import letsgen.service.ui_normal_service as ui_normal_service
 from letsgen.entity.auth_entity import Identity
 from letsgen.entity.ui_admin_router_entity import FirstAdminUser, UserForm, EndpointForm, CredentialForm, \
-    AddEndpointForModelForm
+    AddEndpointForModelForm, ModelForm
 
 router = APIRouter(prefix="/api/ui/admin", tags=["ui-admin"])
 
@@ -109,6 +109,21 @@ async def add_endpoint_for_model(
 
 
 # 添加模型
+@router.post(
+    "/create_model", )
+async def create_model(
+    model_form: ModelForm,
+    identity: Identity = Depends(auth.admin_authorize_check),
+):
+    """添加/创建模型"""
+    await ui_admin_service.create_model(model_form=model_form)
+    return ui_entity.UiBaseResponse(
+        status=0,
+        msg="",
+        data={}
+    )
+
+
 # 修改模型
 
 

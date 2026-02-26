@@ -17,8 +17,9 @@ import letsgen.exceptions.error_class as error_class
 import letsgen.utils.password_util as password_util
 from letsgen.entity.auth_entity import Identity
 from letsgen.db.pg_db_entity_auto import (LetsgenUser, LetsgenProviderCredential, LetsgenProviderEndpoint,
-                                          LetsgenModelEndpointRlt, )
-from letsgen.entity.ui_admin_router_entity import FirstAdminUser, CredentialForm, EndpointForm, AddEndpointForModelForm
+                                          LetsgenModelEndpointRlt, LetsgenModel, )
+from letsgen.entity.ui_admin_router_entity import FirstAdminUser, CredentialForm, EndpointForm, AddEndpointForModelForm, \
+    ModelForm
 
 logger = logging.getLogger(__name__)
 
@@ -219,4 +220,19 @@ async def add_endpoint_for_model(form: AddEndpointForModelForm):
                            f" provider_name: {form.provider_name},"
                            f" endpoint_name: {form.endpoint_name}",
                      exc_info=True)
+        raise error_class.UiOpsConfigError(msg)
+
+
+async def create_model(model_form: ModelForm) -> LetsgenModel:
+    """添加模型"""
+    try:
+        letsgen_model = await pg_db_dao.create_model(model_form)
+        return letsgen_model
+    except IntegrityError as e:
+        msg = f"Conflict with existing data."
+        logger.error(msg + f" model_name: {model_form.model_name}", exc_info=True)
+        raise error_class.UiOpsConfigError(msg)
+    except SQLAlchemyError as e:
+        msg = f"Add model error. Please contact system admin."
+        logger.error(msg + f" model_name: {model_form.model_name}", exc_info=True)
         raise error_class.UiOpsConfigError(msg)

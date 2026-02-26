@@ -20,11 +20,13 @@ from sqlalchemy.sql import text
 
 import letsgen.db.pg_connection as pg_connection
 from letsgen.db.pg_db_entity_auto import LetsgenUser, LetsgenBillAccount, LetsgenAccountApikey, \
-    LetsgenUserAccountRlt, LetsgenWallet, LetsgenProviderCredential, LetsgenProviderEndpoint, LetsgenModelEndpointRlt
+    LetsgenUserAccountRlt, LetsgenWallet, LetsgenProviderCredential, LetsgenProviderEndpoint, LetsgenModelEndpointRlt, \
+    LetsgenModel
 from letsgen.entity.api_common_entity import BillAccountForm, ApiKeyForm, ApikeyStatusEnum, UserToAccountRoleEnum, \
     WalletStatusEnum, WalletForm, ModelEndpointStatusEnum, EndpointStatusEnum, CredentialStatus
-from letsgen.entity.ui_admin_router_entity import UserForm
+from letsgen.entity.ui_admin_router_entity import UserForm, ModelForm
 from letsgen.exceptions import error_class
+from letsgen.utils import number_util
 from letsgen.utils.password_util import hash_password
 
 logger = logging.getLogger(__name__)
@@ -378,3 +380,52 @@ async def query_endpoint_credit(provider: str, credential_name: str) -> LetsgenP
         result = await session.execute(stmt)
         credential = result.scalar_one_or_none()
         return credential
+
+
+async def create_model(model_form: ModelForm) -> LetsgenModel:
+    """添加模型"""
+    letsgen_model = LetsgenModel(
+        **model_form.model_dump()
+    )
+    db_engine = await pg_connection.async_db_pg_engine()
+    async_session_local = async_sessionmaker(bind=db_engine, class_=AsyncSession, expire_on_commit=False)
+    async with async_session_local() as session:
+        async with session.begin():
+            session.add(letsgen_model)
+            return letsgen_model
+
+
+query_model_lru_cache = TTLCache(maxsize=100, ttl=60., timer=time.monotonic)
+
+
+@acached(cache=query_model_lru_cache)
+async def query_model(model_name: str) -> LetsgenModel:
+    """查询模型信息"""
+    db_engine = await pg_connection.async_db_pg_engine()
+    async_session_local = async_sessionmaker(bind=db_engine, class_=AsyncSession, expire_on_commit=False)
+    async with async_session_local() as session:
+        stmt = select(LetsgenModel).where(
+            and_(LetsgenModel.model_name == model_name)
+        )
+        result = await session.execute(stmt)
+        model = result.scalar_one_or_none()
+        return model
+
+
+async def update_wallet_balance(account_name: str, delta: float, pay_currency: str):
+    """更新钱包余额"""
+    db_engine = await pg_connection.async_db_pg_engine()
+    async_session_local = async_sessionmaker(bind=db_engine, class_=AsyncSession, expire_on_commit=False)
+    async with async_session_local() as session:
+        stmt = select(LetsgenWallet).where(
+            and_(LetsgenWallet.account_name == account_name,
+                 LetsgenWallet.currency_type == pay_currency)
+        ).with_for_update()
+        result = await session.execute(stmt)
+        wallet = result.scalar_one_or_none()
+        if wallet is None:
+            msg = f"Cannot find wallet for account {account_name} with currency {pay_currency}"
+            logger.error(msg)
+            raise error_class.AdminConfigError(msg)
+        wallet.cur_balance += number_util.float_to_decimal(delta)
+        await session.commit()

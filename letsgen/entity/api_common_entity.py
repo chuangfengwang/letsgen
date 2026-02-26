@@ -68,10 +68,27 @@ class EndpointStatusEnum(str, Enum):
     ok = "ok"
     down = "down"
 
+
 class ModelEndpointStatusEnum(str, Enum):
     """模型配置的 endpoint 状态"""
     ok = "ok"
     down = "down"
+
+
+class ModelTypeEnum(str, Enum):
+    """模型类型"""
+    generate = "generate"
+    embedding = "embedding"
+    rerank = "rerank"
+
+
+class ModelStatusEnum(str, Enum):
+    """模型状态"""
+    waiting = "waiting"  # 上架中
+    ok = "ok"  # 正常
+    deprecated = "deprecated"  # 已废弃, 不再推荐使用, 但仍然可用
+    disabled = "disabled"  # 已禁用, 不可用
+
 
 class EndpointApiFormatEnum(str, Enum):
     openai = "openai"
