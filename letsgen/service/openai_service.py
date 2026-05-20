@@ -29,7 +29,7 @@ from letsgen.entity.llm_entity import LlmRequestContext
 from letsgen.exceptions import error_class
 from letsgen.service.llm_api_transfer import LlmTransferService
 from letsgen.service.log_content_service import LogContentService
-from letsgen.service.price_service import calculate_fee
+from letsgen.service.price_service import calculate_cost
 from letsgen.system.global_service import log_content_service
 from letsgen.utils import password_util
 from letsgen.utils.function_util import all_param_expect_kwargs
@@ -379,7 +379,7 @@ class OpenAiChatCompletionsService(LlmTransferService):
         price: dict = context.price
         if pay_strategy == "input-tiered":
             # 按输入 token 长度阶梯计价
-            cost, currency = calculate_fee(usage, price, cached_ttl=None)
+            cost, currency = calculate_cost(usage, price)
             # todo: 更新钱包余额
             await pg_db_dao.update_wallet_balance(context.identity.account_name, -cost, currency)
             return cost, currency
